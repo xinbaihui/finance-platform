@@ -106,6 +106,12 @@ export default function AnalysisTab() {
 
   return (
     <AppScreen scrollable>
+      <View style={styles.pageHeader}>
+        <AppText variant="body" style={styles.pageTitle}>
+          精准分析
+        </AppText>
+      </View>
+
       <View style={styles.toolbar}>
         <View style={styles.scopeSwitch}>
           <Pressable
@@ -330,6 +336,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: theme.spacing.md,
     zIndex: 30
+  },
+  pageHeader: {
+    alignItems: "center"
+  },
+  pageTitle: {
+    textAlign: "center"
   },
   scopeSwitch: {
     flexDirection: "row",

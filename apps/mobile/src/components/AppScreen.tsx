@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
     gap: theme.spacing.lg
   },
@@ -51,4 +51,3 @@ const styles = StyleSheet.create({
     flexGrow: 1
   }
 });
-
