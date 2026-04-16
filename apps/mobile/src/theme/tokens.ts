@@ -61,6 +61,11 @@ export const typography = {
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "700" as const
+  },
+  heroNumber: {
+    fontSize: 40,
+    lineHeight: 46,
+    fontWeight: "700" as const
   }
 } as const;
 
@@ -72,4 +77,3 @@ export const theme = {
 } as const;
 
 export type AppTheme = typeof theme;
-

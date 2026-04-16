@@ -3,7 +3,14 @@ import { StyleSheet, Text, type TextProps, type TextStyle } from "react-native";
 
 import { theme } from "../theme";
 
-type TextVariant = "eyebrow" | "title" | "subtitle" | "body" | "bodySmall" | "stat";
+type TextVariant =
+  | "eyebrow"
+  | "title"
+  | "subtitle"
+  | "body"
+  | "bodySmall"
+  | "stat"
+  | "heroNumber";
 
 type AppTextProps = PropsWithChildren<
   TextProps & {
@@ -21,7 +28,8 @@ const variantStyles: Record<TextVariant, TextStyle> = {
   subtitle: theme.typography.subtitle,
   body: theme.typography.body,
   bodySmall: theme.typography.bodySmall,
-  stat: theme.typography.stat
+  stat: theme.typography.stat,
+  heroNumber: theme.typography.heroNumber
 };
 
 export function AppText({
@@ -51,4 +59,3 @@ const styles = StyleSheet.create({
     color: theme.colors.text
   }
 });
-

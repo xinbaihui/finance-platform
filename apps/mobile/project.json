@@ -11,6 +11,13 @@
         "command": "pnpm dev"
       }
     },
+    "web": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/mobile",
+        "command": "pnpm web"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
@@ -31,4 +38,3 @@
     "type:app"
   ]
 }
-

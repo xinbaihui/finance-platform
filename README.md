@@ -50,3 +50,10 @@ For this repo specifically:
 2. Create a Python virtualenv inside `apps/server`
 3. Start Postgres with `docker compose -f packages/db/docker-compose.yml up -d`
 4. Run apps with `pnpm dev:mobile`, `pnpm dev:admin`, `pnpm dev:server`
+
+## Handy Commands
+
+- `pnpm dev:mobile`: start the Expo dev server for the mobile app
+- `pnpm dev:mobile:web`: start the mobile app directly in web mode
+- `pnpm dev:admin`: start the admin app
+- `pnpm dev:server`: start the FastAPI server

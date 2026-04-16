@@ -6,6 +6,7 @@
   "scripts": {
     "nx": "nx",
     "dev:mobile": "nx run mobile:dev",
+    "dev:mobile:web": "nx run mobile:web",
     "dev:admin": "nx run admin:dev",
     "dev:server": "nx run server:dev",
     "db:dev": "nx run db:dev",
