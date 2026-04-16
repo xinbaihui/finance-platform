@@ -1,0 +1,12 @@
+{
+  "name": "@finance/db",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "prisma": "prisma --schema prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
+

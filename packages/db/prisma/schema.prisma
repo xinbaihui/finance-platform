@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  name             String
+  email            String            @unique
+  avatar           String?
+  timezone         String            @default("Asia/Shanghai")
+  currency         String            @default("CNY")
+  preferences      UserPreference?
+  financialProfile FinancialProfile?
+  annualPlans      AnnualPlan[]
+  transactions     Transaction[]
+  chatSessions     ChatSession[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model UserPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  riskLevel   String   @default("balanced")
+  adviceStyle String   @default("balanced")
+  focusArea   String   @default("saving")
+  language    String   @default("zh-CN")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FinancialProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  monthlyIncome       Decimal  @default(0) @db.Decimal(12, 2)
+  annualBonus         Decimal  @default(0) @db.Decimal(12, 2)
+  cashBalance         Decimal  @default(0) @db.Decimal(12, 2)
+  savingsBalance      Decimal  @default(0) @db.Decimal(12, 2)
+  investmentBalance   Decimal  @default(0) @db.Decimal(12, 2)
+  debtBalance         Decimal  @default(0) @db.Decimal(12, 2)
+  monthlyFixedExpense Decimal  @default(0) @db.Decimal(12, 2)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AnnualPlan {
+  id                  String                @id @default(cuid())
+  userId              String
+  year                Int
+  annualIncomeTarget  Decimal               @default(0) @db.Decimal(12, 2)
+  annualExpenseBudget Decimal               @default(0) @db.Decimal(12, 2)
+  annualSavingTarget  Decimal               @default(0) @db.Decimal(12, 2)
+  emergencyFundTarget Decimal               @default(0) @db.Decimal(12, 2)
+  notes               String?
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  largeExpenses       PlannedLargeExpense[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@unique([userId, year])
+}
+
+model PlannedLargeExpense {
+  id           String     @id @default(cuid())
+  annualPlanId String
+  title        String
+  amount       Decimal    @db.Decimal(12, 2)
+  plannedMonth Int
+  category     String
+  notes        String?
+  annualPlan   AnnualPlan @relation(fields: [annualPlanId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  type      String
+  amount    Decimal  @db.Decimal(12, 2)
+  category  String
+  merchant  String?
+  note      String?
+  source    String   @default("manual")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  title     String?
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  metadata  Json?
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+

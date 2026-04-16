@@ -1,0 +1,222 @@
+<svg width="1600" height="2100" viewBox="0 0 1600 2100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="2100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F7F1"/>
+      <stop offset="1" stop-color="#E8EFE4"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F7FAF4"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#274C45" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .title { font: 700 42px Arial, sans-serif; fill: #11342D; }
+      .subtitle { font: 400 22px Arial, sans-serif; fill: #48635C; }
+      .phoneTitle { font: 700 28px Arial, sans-serif; fill: #173C35; }
+      .section { font: 700 20px Arial, sans-serif; fill: #21463F; }
+      .body { font: 400 18px Arial, sans-serif; fill: #4A645D; }
+      .small { font: 400 15px Arial, sans-serif; fill: #648079; }
+      .metric { font: 700 32px Arial, sans-serif; fill: #123A33; }
+      .metricSmall { font: 700 24px Arial, sans-serif; fill: #123A33; }
+      .tab { font: 700 18px Arial, sans-serif; }
+      .pill { font: 700 14px Arial, sans-serif; fill: #0F766E; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="2100" fill="url(#bg)"/>
+  <text x="88" y="110" class="title">Finance Agent App Wireframes</text>
+  <text x="88" y="148" class="subtitle">面向面试展示的理财 Agent 粗略原型，总览 4 个关键页面。</text>
+
+  <g transform="translate(88 220)">
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="640" height="860" rx="46" fill="#163B35"/>
+      <rect x="22" y="22" width="596" height="816" rx="38" fill="url(#card)"/>
+      <rect x="238" y="10" width="164" height="14" rx="7" fill="#163B35"/>
+    </g>
+    <text x="52" y="84" class="phoneTitle">1. AI Chat</text>
+    <text x="52" y="118" class="body">你的理财副驾驶，围绕年度目标和当前账务上下文回答。</text>
+    <rect x="52" y="152" width="154" height="34" rx="17" fill="#D8F1E8"/>
+    <text x="77" y="174" class="pill">Context Aware</text>
+
+    <rect x="52" y="210" width="536" height="104" rx="26" fill="#E9F6F0"/>
+    <text x="78" y="252" class="body">你离年度储蓄目标还差 18,000，按当前节奏</text>
+    <text x="78" y="282" class="body">年底会少 6,400。我给你拆了 3 个可执行动作。</text>
+
+    <rect x="176" y="336" width="412" height="112" rx="26" fill="#FFFFFF" stroke="#D6E6DD"/>
+    <text x="204" y="378" class="body">如果我把每月餐饮降 500，年底能多存多少？</text>
+    <text x="204" y="408" class="small">用户消息</text>
+
+    <rect x="52" y="472" width="536" height="196" rx="28" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <text x="80" y="518" class="section">Agent Reply</text>
+    <text x="80" y="558" class="body">预计全年可多储蓄 4,500 到 6,000。</text>
+    <text x="80" y="590" class="body">原因：餐饮支出会直接改善月结余，且你当前</text>
+    <text x="80" y="620" class="body">超支主要集中在高频消费。建议把餐饮预算从</text>
+    <text x="80" y="650" class="body">2,800 调整为 2,300，并保留每周一次弹性额度。</text>
+
+    <rect x="52" y="694" width="168" height="42" rx="21" fill="#DCEFEA"/>
+    <rect x="230" y="694" width="196" height="42" rx="21" fill="#DCEFEA"/>
+    <rect x="436" y="694" width="152" height="42" rx="21" fill="#DCEFEA"/>
+    <text x="76" y="721" class="small">分析本月支出</text>
+    <text x="252" y="721" class="small">离年度目标还差多少</text>
+    <text x="461" y="721" class="small">全年预测</text>
+
+    <rect x="52" y="758" width="536" height="48" rx="24" fill="#FFFFFF" stroke="#D6E6DD"/>
+    <text x="80" y="789" class="body">问点什么，比如“我今年会不会超支？”</text>
+    <circle cx="553" cy="782" r="18" fill="url(#accent)"/>
+
+    <rect x="70" y="814" width="500" height="10" rx="5" fill="#E0E9E4"/>
+    <rect x="70" y="814" width="116" height="10" rx="5" fill="#173C35"/>
+    <text x="84" y="805" class="small">AI Chat</text>
+    <text x="276" y="805" class="small">分析</text>
+    <text x="448" y="805" class="small">我的</text>
+  </g>
+
+  <g transform="translate(800 220)">
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="640" height="860" rx="46" fill="#163B35"/>
+      <rect x="22" y="22" width="596" height="816" rx="38" fill="url(#card)"/>
+      <rect x="238" y="10" width="164" height="14" rx="7" fill="#163B35"/>
+    </g>
+    <text x="52" y="84" class="phoneTitle">2. 财务分析</text>
+    <text x="52" y="118" class="body">年度 / 月度切换，结构图、预测、储蓄进度和建议。</text>
+
+    <rect x="52" y="152" width="98" height="40" rx="20" fill="#173C35"/>
+    <rect x="160" y="152" width="98" height="40" rx="20" fill="#E4ECE7"/>
+    <rect x="448" y="152" width="140" height="40" rx="20" fill="#FFFFFF" stroke="#D6E6DD"/>
+    <text x="85" y="178" class="tab" fill="#FFFFFF">年度</text>
+    <text x="192" y="178" class="tab" fill="#59716A">月度</text>
+    <text x="486" y="178" class="small">2026 ▼</text>
+
+    <rect x="52" y="218" width="252" height="170" rx="28" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <text x="78" y="258" class="section">年度总支出</text>
+    <text x="78" y="314" class="metric">¥32,400</text>
+    <text x="78" y="348" class="small">月均 ¥8,100</text>
+
+    <rect x="336" y="218" width="252" height="170" rx="28" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <text x="362" y="258" class="section">年度已储蓄</text>
+    <text x="362" y="314" class="metric">¥18,700</text>
+    <text x="362" y="348" class="small">目标完成 31%</text>
+
+    <rect x="52" y="412" width="536" height="214" rx="28" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="78" y="452" class="section">支出结构</text>
+    <circle cx="180" cy="528" r="72" fill="#D9EEE8"/>
+    <path d="M180 528 L180 456 A72 72 0 0 1 246 556 Z" fill="#1D4ED8"/>
+    <path d="M180 528 L246 556 A72 72 0 0 1 156 596 Z" fill="#F59E0B"/>
+    <path d="M180 528 L156 596 A72 72 0 0 1 120 486 Z" fill="#10B981"/>
+    <path d="M180 528 L120 486 A72 72 0 0 1 180 456 Z" fill="#EF4444"/>
+    <rect x="300" y="476" width="18" height="18" rx="4" fill="#EF4444"/>
+    <rect x="300" y="516" width="18" height="18" rx="4" fill="#1D4ED8"/>
+    <rect x="300" y="556" width="18" height="18" rx="4" fill="#F59E0B"/>
+    <rect x="300" y="596" width="18" height="18" rx="4" fill="#10B981"/>
+    <text x="332" y="491" class="body">住房 38%</text>
+    <text x="332" y="531" class="body">餐饮 24%</text>
+    <text x="332" y="571" class="body">购物 18%</text>
+    <text x="332" y="611" class="body">其他 20%</text>
+
+    <rect x="52" y="650" width="536" height="124" rx="28" fill="#EAF5F2"/>
+    <text x="78" y="692" class="section">全年预测</text>
+    <text x="78" y="728" class="body">按当前节奏，全年支出约 ¥97,200，较预算超支 ¥9,200。</text>
+    <text x="78" y="758" class="body">按当前储蓄速度，年底预计可存 ¥56,100，离目标差 ¥3,900。</text>
+
+    <rect x="70" y="814" width="500" height="10" rx="5" fill="#E0E9E4"/>
+    <rect x="250" y="814" width="116" height="10" rx="5" fill="#173C35"/>
+    <text x="84" y="805" class="small">AI Chat</text>
+    <text x="276" y="805" class="small">分析</text>
+    <text x="448" y="805" class="small">我的</text>
+  </g>
+
+  <g transform="translate(88 1150)">
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="640" height="860" rx="46" fill="#163B35"/>
+      <rect x="22" y="22" width="596" height="816" rx="38" fill="url(#card)"/>
+      <rect x="238" y="10" width="164" height="14" rx="7" fill="#163B35"/>
+    </g>
+    <text x="52" y="84" class="phoneTitle">3. 我的</text>
+    <text x="52" y="118" class="body">用户画像、资产、偏好，以及年度规划入口。</text>
+
+    <rect x="52" y="152" width="536" height="132" rx="28" fill="#173C35"/>
+    <text x="84" y="200" style="font:700 30px Arial, sans-serif; fill:#FFFFFF;">Ellaxin</text>
+    <text x="84" y="236" class="body" fill="#D7EBE6">偏好：平衡型建议  ·  关注重点：储蓄与现金流</text>
+    <text x="84" y="266" class="body" fill="#D7EBE6">今年目标：存够 60,000</text>
+
+    <rect x="52" y="314" width="252" height="148" rx="28" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <rect x="336" y="314" width="252" height="148" rx="28" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <text x="78" y="354" class="section">总资产</text>
+    <text x="78" y="410" class="metric">¥128,000</text>
+    <text x="362" y="354" class="section">负债</text>
+    <text x="362" y="410" class="metric">¥6,800</text>
+
+    <rect x="52" y="488" width="536" height="84" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="522" class="section">年度财务规划</text>
+    <text x="80" y="551" class="small">收入、固定支出、目标、偏好与大额支出计划</text>
+    <text x="546" y="536" class="body">›</text>
+
+    <rect x="52" y="592" width="536" height="84" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="626" class="section">资产信息</text>
+    <text x="80" y="655" class="small">现金、存款、基金 / 股票、待还款项</text>
+    <text x="546" y="640" class="body">›</text>
+
+    <rect x="52" y="696" width="536" height="84" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="730" class="section">建议偏好</text>
+    <text x="80" y="759" class="small">严格控支 / 平衡建议 / 重视生活质量</text>
+    <text x="546" y="744" class="body">›</text>
+
+    <rect x="70" y="814" width="500" height="10" rx="5" fill="#E0E9E4"/>
+    <rect x="430" y="814" width="116" height="10" rx="5" fill="#173C35"/>
+    <text x="84" y="805" class="small">AI Chat</text>
+    <text x="276" y="805" class="small">分析</text>
+    <text x="448" y="805" class="small">我的</text>
+  </g>
+
+  <g transform="translate(800 1150)">
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="640" height="860" rx="46" fill="#163B35"/>
+      <rect x="22" y="22" width="596" height="816" rx="38" fill="url(#card)"/>
+      <rect x="238" y="10" width="164" height="14" rx="7" fill="#163B35"/>
+    </g>
+    <text x="52" y="84" class="phoneTitle">4. 年度财务规划</text>
+    <text x="52" y="118" class="body">作为产品数据中枢，供 Agent 长期使用与修正。</text>
+
+    <rect x="52" y="152" width="252" height="118" rx="24" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <rect x="336" y="152" width="252" height="118" rx="24" fill="#F7FBF8" stroke="#DCE8E0"/>
+    <text x="78" y="192" class="small">月收入</text>
+    <text x="78" y="234" class="metricSmall">¥18,000</text>
+    <text x="362" y="192" class="small">固定支出</text>
+    <text x="362" y="234" class="metricSmall">¥5,300</text>
+
+    <rect x="52" y="294" width="536" height="110" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="334" class="small">年度储蓄目标</text>
+    <text x="80" y="372" class="metricSmall">¥60,000</text>
+    <rect x="80" y="384" width="428" height="10" rx="5" fill="#E2ECE7"/>
+    <rect x="80" y="384" width="132" height="10" rx="5" fill="#0F766E"/>
+    <text x="520" y="392" class="small">31%</text>
+
+    <rect x="52" y="430" width="536" height="92" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="468" class="section">大额支出计划</text>
+    <text x="80" y="496" class="small">9 月旅行 ¥8,000  ·  11 月换电脑 ¥10,000</text>
+
+    <rect x="52" y="546" width="536" height="124" rx="24" fill="#FFFFFF" stroke="#DCE8E0"/>
+    <text x="80" y="586" class="section">建议偏好</text>
+    <rect x="80" y="606" width="108" height="34" rx="17" fill="#173C35"/>
+    <rect x="198" y="606" width="108" height="34" rx="17" fill="#E6EEEA"/>
+    <rect x="316" y="606" width="138" height="34" rx="17" fill="#E6EEEA"/>
+    <text x="112" y="629" class="small" fill="#FFFFFF">平衡</text>
+    <text x="226" y="629" class="small">保守</text>
+    <text x="346" y="629" class="small">重生活质量</text>
+
+    <rect x="52" y="694" width="536" height="88" rx="28" fill="url(#accent)"/>
+    <text x="80" y="744" style="font:700 22px Arial, sans-serif; fill:#FFFFFF;">保存规划并更新 Agent 记忆</text>
+
+    <rect x="70" y="814" width="500" height="10" rx="5" fill="#E0E9E4"/>
+    <rect x="430" y="814" width="116" height="10" rx="5" fill="#173C35"/>
+    <text x="84" y="805" class="small">AI Chat</text>
+    <text x="276" y="805" class="small">分析</text>
+    <text x="448" y="805" class="small">我的</text>
+  </g>
+</svg>

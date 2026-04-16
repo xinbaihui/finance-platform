@@ -1,0 +1,34 @@
+{
+  "name": "db",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/db",
+  "projectType": "library",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/db",
+        "command": "docker compose up -d"
+      }
+    },
+    "down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/db",
+        "command": "docker compose down"
+      }
+    },
+    "prisma:format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/db",
+        "command": "pnpm prisma format"
+      }
+    }
+  },
+  "tags": [
+    "scope:db",
+    "type:data"
+  ]
+}
+

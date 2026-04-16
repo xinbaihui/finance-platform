@@ -1,0 +1,301 @@
+<svg width="1800" height="2080" viewBox="0 0 1800 2080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="canvas" x1="164" y1="32" x2="1574" y2="2046" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F0E8"/>
+      <stop offset="0.5" stop-color="#ECF4EA"/>
+      <stop offset="1" stop-color="#E4EEF4"/>
+    </linearGradient>
+    <radialGradient id="orbA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(315 430) rotate(74.8) scale(421 365)">
+      <stop stop-color="#A9E5CF"/>
+      <stop offset="1" stop-color="#A9E5CF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1440 340) rotate(120) scale(330 285)">
+      <stop stop-color="#B8C8FF"/>
+      <stop offset="1" stop-color="#B8C8FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="deviceFrame" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#17332E"/>
+      <stop offset="1" stop-color="#0D1D1A"/>
+    </linearGradient>
+    <linearGradient id="deviceScreen" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FBFCF8"/>
+      <stop offset="1" stop-color="#F2F5F1"/>
+    </linearGradient>
+    <linearGradient id="heroCard" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#123D37"/>
+      <stop offset="0.55" stop-color="#1D5B52"/>
+      <stop offset="1" stop-color="#4467B8"/>
+    </linearGradient>
+    <linearGradient id="mintCard" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#E8F7F0"/>
+      <stop offset="1" stop-color="#DDEFEA"/>
+    </linearGradient>
+    <linearGradient id="blueCard" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#EEF3FF"/>
+      <stop offset="1" stop-color="#D9E5FF"/>
+    </linearGradient>
+    <linearGradient id="actionBtn" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="28" stdDeviation="26" flood-color="#163831" flood-opacity="0.14"/>
+    </filter>
+    <filter id="innerCardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1A4038" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      .displayTitle { font: 700 54px Georgia, 'Times New Roman', serif; fill: #19352F; }
+      .displaySub { font: 400 22px Arial, sans-serif; fill: #506A62; }
+      .phoneLabel { font: 700 26px Georgia, 'Times New Roman', serif; fill: #173A34; }
+      .section { font: 700 18px Arial, sans-serif; fill: #1F433D; letter-spacing: 0.02em; }
+      .body { font: 400 17px Arial, sans-serif; fill: #567068; }
+      .small { font: 400 14px Arial, sans-serif; fill: #7A918B; }
+      .tiny { font: 700 12px Arial, sans-serif; fill: #6D847E; letter-spacing: 0.08em; }
+      .metricXL { font: 700 34px Georgia, 'Times New Roman', serif; fill: #143731; }
+      .metricL { font: 700 28px Georgia, 'Times New Roman', serif; fill: #143731; }
+      .metricDark { font: 700 36px Georgia, 'Times New Roman', serif; fill: #FFFFFF; }
+      .heroText { font: 400 17px Arial, sans-serif; fill: rgba(255,255,255,0.82); }
+      .navText { font: 700 14px Arial, sans-serif; fill: #809792; }
+      .navTextActive { font: 700 14px Arial, sans-serif; fill: #163B35; }
+      .chipText { font: 700 13px Arial, sans-serif; fill: #163B35; }
+      .whiteChipText { font: 700 13px Arial, sans-serif; fill: #FFFFFF; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="2080" fill="url(#canvas)"/>
+  <circle cx="320" cy="430" r="420" fill="url(#orbA)"/>
+  <circle cx="1458" cy="350" r="332" fill="url(#orbB)"/>
+  <circle cx="1496" cy="1600" r="280" fill="url(#orbA)"/>
+
+  <text x="118" y="128" class="displayTitle">Finance Agent App Visual Mockups</text>
+  <text x="118" y="170" class="displaySub">把你前面的产品结构推进成更像真实作品集的展示稿，适合面试时讲功能、数据闭环和 Agent 价值。</text>
+
+  <g transform="translate(118 246)">
+    <g filter="url(#softShadow)">
+      <rect x="0" y="0" width="346" height="760" rx="42" fill="url(#deviceFrame)"/>
+      <rect x="14" y="14" width="318" height="732" rx="34" fill="url(#deviceScreen)"/>
+      <rect x="123" y="10" width="100" height="10" rx="5" fill="#0B1715"/>
+    </g>
+
+    <text x="28" y="50" class="phoneLabel">AI Chat</text>
+    <text x="28" y="76" class="small">Agent knows your annual plan and cashflow baseline.</text>
+
+    <rect x="28" y="100" width="290" height="154" rx="28" fill="url(#heroCard)"/>
+    <text x="52" y="138" class="tiny" fill="#CDEBE0">THIS MONTH</text>
+    <text x="52" y="178" class="metricDark">¥6,300</text>
+    <text x="52" y="208" class="heroText">结余仍高于目标，但餐饮与购物正在拖慢年度储蓄进度。</text>
+    <rect x="52" y="222" width="108" height="30" rx="15" fill="rgba(255,255,255,0.18)"/>
+    <text x="78" y="242" class="whiteChipText">View actions</text>
+    <circle cx="280" cy="150" r="38" fill="rgba(255,255,255,0.08)"/>
+    <circle cx="280" cy="150" r="22" fill="rgba(255,255,255,0.15)"/>
+
+    <rect x="100" y="274" width="218" height="88" rx="24" fill="#FFFFFF" filter="url(#innerCardShadow)"/>
+    <text x="122" y="312" class="body">如果我把每月餐饮降 500，年底还能补回多少？</text>
+    <text x="122" y="340" class="small">User</text>
+
+    <rect x="28" y="382" width="290" height="170" rx="26" fill="#F7FAF8" stroke="#DFE8E4"/>
+    <text x="52" y="420" class="section">Agent insight</text>
+    <text x="52" y="454" class="body">预计全年可多存 ¥4,500 到 ¥6,000。</text>
+    <text x="52" y="484" class="body">高频餐饮是你最容易回收现金流的支出项，</text>
+    <text x="52" y="514" class="body">建议先将预算从 2,800 调整到 2,300，保留</text>
+    <text x="52" y="544" class="body">每周一次弹性额度，避免计划失真。</text>
+
+    <rect x="28" y="574" width="92" height="34" rx="17" fill="#DFF1E9"/>
+    <rect x="128" y="574" width="94" height="34" rx="17" fill="#E8EEFF"/>
+    <rect x="230" y="574" width="88" height="34" rx="17" fill="#F1EFE5"/>
+    <text x="52" y="596" class="chipText">本月分析</text>
+    <text x="154" y="596" class="chipText">全年预测</text>
+    <text x="256" y="596" class="chipText">目标差距</text>
+
+    <rect x="28" y="630" width="290" height="52" rx="26" fill="#FFFFFF" stroke="#DCE5E1"/>
+    <text x="52" y="662" class="body">问点什么，比如“我今年会不会超支？”</text>
+    <circle cx="286" cy="656" r="16" fill="url(#actionBtn)"/>
+
+    <rect x="48" y="701" width="250" height="1" fill="#E0E9E5"/>
+    <rect x="44" y="710" width="54" height="4" rx="2" fill="#183B35"/>
+    <text x="38" y="728" class="navTextActive">Chat</text>
+    <text x="144" y="728" class="navText">Analysis</text>
+    <text x="262" y="728" class="navText">Me</text>
+  </g>
+
+  <g transform="translate(518 246)">
+    <g filter="url(#softShadow)">
+      <rect x="0" y="0" width="346" height="760" rx="42" fill="url(#deviceFrame)"/>
+      <rect x="14" y="14" width="318" height="732" rx="34" fill="url(#deviceScreen)"/>
+      <rect x="123" y="10" width="100" height="10" rx="5" fill="#0B1715"/>
+    </g>
+
+    <text x="28" y="50" class="phoneLabel">Financial Analysis</text>
+    <text x="28" y="76" class="small">Annual or monthly analysis with projection and goal gap.</text>
+
+    <rect x="28" y="100" width="80" height="32" rx="16" fill="#183B35"/>
+    <rect x="116" y="100" width="80" height="32" rx="16" fill="#E4EBE7"/>
+    <rect x="226" y="100" width="92" height="32" rx="16" fill="#FFFFFF" stroke="#D6E2DD"/>
+    <text x="54" y="121" class="whiteChipText">年度</text>
+    <text x="142" y="121" class="chipText">月度</text>
+    <text x="252" y="121" class="small">2026 ▼</text>
+
+    <rect x="28" y="148" width="138" height="118" rx="24" fill="url(#mintCard)"/>
+    <rect x="180" y="148" width="138" height="118" rx="24" fill="url(#blueCard)"/>
+    <text x="48" y="180" class="tiny">ANNUAL SPEND</text>
+    <text x="48" y="218" class="metricL">¥32,400</text>
+    <text x="48" y="244" class="small">月均 ¥8,100</text>
+    <text x="200" y="180" class="tiny">SAVED</text>
+    <text x="200" y="218" class="metricL">¥18,700</text>
+    <text x="200" y="244" class="small">目标完成 31%</text>
+
+    <rect x="28" y="286" width="290" height="214" rx="28" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="324" class="section">Spending mix</text>
+    <circle cx="112" cy="392" r="58" fill="#E6F0EB"/>
+    <path d="M112 392 L112 334 A58 58 0 0 1 164 418 Z" fill="#2563EB"/>
+    <path d="M112 392 L164 418 A58 58 0 0 1 93 447 Z" fill="#F59E0B"/>
+    <path d="M112 392 L93 447 A58 58 0 0 1 58 361 Z" fill="#10B981"/>
+    <path d="M112 392 L58 361 A58 58 0 0 1 112 334 Z" fill="#EF4444"/>
+    <rect x="196" y="352" width="14" height="14" rx="4" fill="#EF4444"/>
+    <rect x="196" y="382" width="14" height="14" rx="4" fill="#2563EB"/>
+    <rect x="196" y="412" width="14" height="14" rx="4" fill="#F59E0B"/>
+    <rect x="196" y="442" width="14" height="14" rx="4" fill="#10B981"/>
+    <text x="220" y="364" class="body">住房 38%</text>
+    <text x="220" y="394" class="body">餐饮 24%</text>
+    <text x="220" y="424" class="body">购物 18%</text>
+    <text x="220" y="454" class="body">其他 20%</text>
+
+    <rect x="28" y="518" width="290" height="136" rx="28" fill="url(#heroCard)"/>
+    <text x="50" y="554" class="tiny" fill="#CFE7E3">YEAR-END PROJECTION</text>
+    <text x="50" y="594" class="metricDark">¥97,200</text>
+    <text x="50" y="624" class="heroText">按当前速度，全年预计超支 ¥9,200；年底预计储蓄 ¥56,100，距目标还差 ¥3,900。</text>
+
+    <rect x="48" y="701" width="250" height="1" fill="#E0E9E5"/>
+    <text x="38" y="728" class="navText">Chat</text>
+    <rect x="136" y="710" width="58" height="4" rx="2" fill="#183B35"/>
+    <text x="140" y="728" class="navTextActive">Analysis</text>
+    <text x="262" y="728" class="navText">Me</text>
+  </g>
+
+  <g transform="translate(918 246)">
+    <g filter="url(#softShadow)">
+      <rect x="0" y="0" width="346" height="760" rx="42" fill="url(#deviceFrame)"/>
+      <rect x="14" y="14" width="318" height="732" rx="34" fill="url(#deviceScreen)"/>
+      <rect x="123" y="10" width="100" height="10" rx="5" fill="#0B1715"/>
+    </g>
+
+    <text x="28" y="50" class="phoneLabel">Me</text>
+    <text x="28" y="76" class="small">Assets, preferences and the annual planning entry.</text>
+
+    <rect x="28" y="100" width="290" height="136" rx="30" fill="url(#heroCard)"/>
+    <circle cx="72" cy="145" r="24" fill="rgba(255,255,255,0.18)"/>
+    <text x="108" y="142" class="tiny" fill="#CFE7E3">PROFILE</text>
+    <text x="108" y="174" class="metricDark">Ellaxin</text>
+    <text x="108" y="202" class="heroText">偏好：平衡建议 · 重点：储蓄与现金流</text>
+
+    <rect x="28" y="258" width="138" height="108" rx="24" fill="url(#mintCard)"/>
+    <rect x="180" y="258" width="138" height="108" rx="24" fill="url(#blueCard)"/>
+    <text x="48" y="290" class="tiny">ASSETS</text>
+    <text x="48" y="326" class="metricL">¥128k</text>
+    <text x="48" y="350" class="small">现金 + 存款 + 投资</text>
+    <text x="200" y="290" class="tiny">LIABILITIES</text>
+    <text x="200" y="326" class="metricL">¥6.8k</text>
+    <text x="200" y="350" class="small">信用卡与短期欠款</text>
+
+    <rect x="28" y="388" width="290" height="76" rx="24" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="420" class="section">年度财务规划</text>
+    <text x="50" y="446" class="small">收入、预算、目标、偏好与大额支出计划</text>
+    <text x="290" y="428" class="body">›</text>
+
+    <rect x="28" y="478" width="290" height="76" rx="24" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="510" class="section">资产信息</text>
+    <text x="50" y="536" class="small">现金、存款、基金 / 股票、信用卡待还</text>
+    <text x="290" y="518" class="body">›</text>
+
+    <rect x="28" y="568" width="290" height="76" rx="24" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="600" class="section">建议偏好</text>
+    <text x="50" y="626" class="small">保守 / 平衡 / 更重视生活质量</text>
+    <text x="290" y="608" class="body">›</text>
+
+    <rect x="48" y="701" width="250" height="1" fill="#E0E9E5"/>
+    <text x="38" y="728" class="navText">Chat</text>
+    <text x="144" y="728" class="navText">Analysis</text>
+    <rect x="252" y="710" width="44" height="4" rx="2" fill="#183B35"/>
+    <text x="262" y="728" class="navTextActive">Me</text>
+  </g>
+
+  <g transform="translate(1318 246)">
+    <g filter="url(#softShadow)">
+      <rect x="0" y="0" width="346" height="760" rx="42" fill="url(#deviceFrame)"/>
+      <rect x="14" y="14" width="318" height="732" rx="34" fill="url(#deviceScreen)"/>
+      <rect x="123" y="10" width="100" height="10" rx="5" fill="#0B1715"/>
+    </g>
+
+    <text x="28" y="50" class="phoneLabel">Annual Plan</text>
+    <text x="28" y="76" class="small">The key data intake that powers analysis and agent memory.</text>
+
+    <rect x="28" y="100" width="138" height="104" rx="22" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <rect x="180" y="100" width="138" height="104" rx="22" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="46" y="132" class="tiny">MONTHLY INCOME</text>
+    <text x="46" y="168" class="metricL">¥18,000</text>
+    <text x="198" y="132" class="tiny">FIXED COST</text>
+    <text x="198" y="168" class="metricL">¥5,300</text>
+
+    <rect x="28" y="222" width="290" height="112" rx="24" fill="url(#mintCard)"/>
+    <text x="50" y="256" class="tiny">ANNUAL SAVING TARGET</text>
+    <text x="50" y="292" class="metricL">¥60,000</text>
+    <rect x="50" y="304" width="218" height="10" rx="5" fill="#CFE1DA"/>
+    <rect x="50" y="304" width="76" height="10" rx="5" fill="#0F766E"/>
+    <text x="278" y="313" class="small">31%</text>
+
+    <rect x="28" y="352" width="290" height="86" rx="24" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="384" class="section">大额支出计划</text>
+    <text x="50" y="412" class="small">9 月旅行 ¥8,000 · 11 月换电脑 ¥10,000</text>
+
+    <rect x="28" y="454" width="290" height="106" rx="24" fill="#FFFFFF" stroke="#DCE5E2"/>
+    <text x="50" y="486" class="section">建议风格</text>
+    <rect x="50" y="504" width="76" height="30" rx="15" fill="#183B35"/>
+    <rect x="136" y="504" width="76" height="30" rx="15" fill="#E7ECE9"/>
+    <rect x="222" y="504" width="76" height="30" rx="15" fill="#E7ECE9"/>
+    <text x="75" y="524" class="whiteChipText">平衡</text>
+    <text x="161" y="524" class="chipText">保守</text>
+    <text x="239" y="524" class="chipText">品质</text>
+    <text x="50" y="548" class="small">让 Agent 给建议时更贴近你的生活方式。</text>
+
+    <rect x="28" y="580" width="290" height="70" rx="24" fill="url(#actionBtn)"/>
+    <text x="90" y="623" class="whiteChipText" style="font-size:18px;">保存并更新 Agent 记忆</text>
+
+    <rect x="48" y="701" width="250" height="1" fill="#E0E9E5"/>
+    <text x="38" y="728" class="navText">Chat</text>
+    <text x="144" y="728" class="navText">Analysis</text>
+    <text x="262" y="728" class="navTextActive">Plan</text>
+  </g>
+
+  <g transform="translate(118 1116)">
+    <rect x="0" y="0" width="1546" height="792" rx="42" fill="rgba(255,255,255,0.56)" stroke="rgba(255,255,255,0.6)"/>
+    <text x="48" y="66" class="phoneLabel">Presentation Notes</text>
+    <text x="48" y="104" class="body">这一版更偏“作品集展示稿”，适合你在面试里讲清楚：理财 Agent 不是问答壳，而是围绕长期规划、年度分析和可执行建议构建的决策辅助系统。</text>
+
+    <rect x="48" y="148" width="470" height="250" rx="30" fill="#FFFFFF" filter="url(#innerCardShadow)"/>
+    <text x="80" y="194" class="section">Why this feels productized</text>
+    <text x="80" y="236" class="body">1. 底部三大 Tab 承担不同任务：聊天、分析、个人配置。</text>
+    <text x="80" y="274" class="body">2. 年度规划单独成入口，解决 AI 产品最常见的数据不完整问题。</text>
+    <text x="80" y="312" class="body">3. 分析页不仅展示图表，还给出全年 projection 与目标差距。</text>
+    <text x="80" y="350" class="body">4. 聊天页基于财务上下文回答，而不是泛化建议。</text>
+
+    <rect x="538" y="148" width="470" height="250" rx="30" fill="#FFFFFF" filter="url(#innerCardShadow)"/>
+    <text x="570" y="194" class="section">What to build first</text>
+    <text x="570" y="236" class="body">1. 先做年度规划数据结构与表单。</text>
+    <text x="570" y="274" class="body">2. 再做财务分析页：支出结构、储蓄进度、全年预测。</text>
+    <text x="570" y="312" class="body">3. 最后接入 Chat，让它读取同一份 profile 与分析结果。</text>
+
+    <rect x="1028" y="148" width="470" height="250" rx="30" fill="#FFFFFF" filter="url(#innerCardShadow)"/>
+    <text x="1060" y="194" class="section">Good interview story</text>
+    <text x="1060" y="236" class="body">“我不是做了个记账 UI，而是做了一个有长期基线、</text>
+    <text x="1060" y="274" class="body">能解释年度风险、还能把建议收敛成动作的理财 Agent。”</text>
+    <text x="1060" y="330" class="body">这句会很有力量。</text>
+
+    <rect x="48" y="438" width="1450" height="292" rx="30" fill="url(#heroCard)"/>
+    <text x="88" y="498" class="tiny" fill="#CFE7E3">NEXT STEP</text>
+    <text x="88" y="556" style="font:700 38px Georgia, 'Times New Roman', serif; fill:#FFFFFF;">可以继续把它推进成真正能点的前端页面</text>
+    <text x="88" y="600" class="heroText">如果你愿意，下一步最值得做的是直接实现 `财务分析页`。这页最能体现你的前端能力、图表组织能力，以及 Agent 数据闭环设计。</text>
+    <rect x="88" y="636" width="206" height="38" rx="19" fill="rgba(255,255,255,0.16)"/>
+    <text x="132" y="661" class="whiteChipText">Build Analysis Screen</text>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Finance Agent",
+    "slug": "finance-agent",
+    "scheme": "finance-agent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
+
