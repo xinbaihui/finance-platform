@@ -7,8 +7,87 @@ import { theme } from "../../src/theme";
 
 const quickTags = ["本月分析", "全年预测", "目标差距"] as const;
 
+type ChatMessage = {
+  id: string;
+  role: "assistant" | "user";
+  content: string;
+  tone?: "default" | "error";
+};
+
 export default function ChatTab() {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content:
+        "你好，我会基于你的年度规划、资产信息和分析结果，帮助你理解本月支出、全年走势和目标差距。"
+    }
+  ]);
+  const [sending, setSending] = useState(false);
+
+  async function sendMessage(nextMessage?: string) {
+    const content = (nextMessage ?? message).trim();
+    if (!content || sending) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content
+    };
+
+    setMessages((current) => [...current, userMessage]);
+    setMessage("");
+    setSending(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: content })
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as
+          | { detail?: string }
+          | null;
+
+        throw new Error(errorPayload?.detail ?? "Chat request failed.");
+      }
+
+      const data = (await response.json()) as { reply: string };
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: data.reply
+        }
+      ]);
+    } catch (error) {
+      const fallback =
+        error instanceof Error
+          ? error.message
+          : "请求失败，请检查服务端是否已经启动。";
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-error-${Date.now()}`,
+          role: "assistant",
+          content: `暂时无法连接模型服务：${fallback}`,
+          tone: "error"
+        }
+      ]);
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <AppScreen>
@@ -23,23 +102,44 @@ export default function ChatTab() {
 
         <View style={styles.chatArea}>
           <View style={styles.messageStack}>
-            <AppCard tone="mint" style={styles.assistantCard}>
-              <AppText variant="body" color="textMuted">
-                你好，我会基于你的年度规划、资产信息和分析结果，帮助你理解本月支出、全年走势和目标差距。
-              </AppText>
-            </AppCard>
+            {messages.map((item) =>
+              item.role === "assistant" ? (
+                <AppCard
+                  key={item.id}
+                  tone={item.tone === "error" ? "default" : "mint"}
+                  style={[
+                    styles.assistantCard,
+                    item.tone === "error" && styles.errorCard
+                  ]}
+                >
+                  <AppText
+                    variant="bodySmall"
+                    color={item.tone === "error" ? "text" : "textMuted"}
+                  >
+                    {item.content}
+                  </AppText>
+                </AppCard>
+              ) : (
+                <View key={item.id} style={styles.userBubble}>
+                  <AppText variant="bodySmall" color="white">
+                    {item.content}
+                  </AppText>
+                </View>
+              )
+            )}
 
-            <View style={styles.userBubble}>
-              <AppText variant="bodySmall" color="white">
-                我今年还能完成储蓄目标吗？
-              </AppText>
-            </View>
-
-            <AppCard style={styles.assistantCard}>
-              <AppText variant="bodySmall" color="textMuted">
-                按当前数据看，你距离年度目标还差 0.4 万元。如果接下来两个月把餐饮和购物支出再压低一点，还是有机会追回的。
-              </AppText>
-            </AppCard>
+            {sending ? (
+              <AppCard tone="mint" style={styles.assistantCard}>
+                <View style={styles.loadingRow}>
+                  <View style={styles.loadingDot} />
+                  <View style={styles.loadingDot} />
+                  <View style={styles.loadingDot} />
+                  <AppText variant="bodySmall" color="textMuted">
+                    正在思考...
+                  </AppText>
+                </View>
+              </AppCard>
+            ) : null}
           </View>
         </View>
 
@@ -48,7 +148,11 @@ export default function ChatTab() {
         <View style={styles.footer}>
           <View style={styles.tagRow}>
             {quickTags.map((tag) => (
-              <Pressable key={tag} style={({ pressed }) => [styles.tag, pressed && styles.tagPressed]}>
+              <Pressable
+                key={tag}
+                onPress={() => sendMessage(tag)}
+                style={({ pressed }) => [styles.tag, pressed && styles.tagPressed]}
+              >
                 <AppText variant="bodySmall" color="primaryDark">
                   {tag}
                 </AppText>
@@ -61,9 +165,18 @@ export default function ChatTab() {
               value={message}
               onChangeText={setMessage}
               placeholder="问点什么，比如“我今年会不会超支？”"
+              editable={!sending}
               style={styles.input}
             />
-            <Pressable style={({ pressed }) => [styles.sendButton, pressed && styles.sendPressed]}>
+            <Pressable
+              onPress={() => sendMessage()}
+              disabled={sending}
+              style={({ pressed }) => [
+                styles.sendButton,
+                pressed && styles.sendPressed,
+                sending && styles.sendDisabled
+              ]}
+            >
               <Ionicons name="arrow-up" size={16} color={theme.colors.white} />
             </Pressable>
           </View>
@@ -102,6 +215,10 @@ const styles = StyleSheet.create({
   },
   assistantCard: {
     shadowOpacity: 0.04
+  },
+  errorCard: {
+    backgroundColor: "#fff4f2",
+    borderColor: "#f3c7bf"
   },
   userBubble: {
     alignSelf: "flex-end",
@@ -163,5 +280,19 @@ const styles = StyleSheet.create({
   },
   sendPressed: {
     opacity: 0.88
+  },
+  sendDisabled: {
+    opacity: 0.5
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  loadingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary
   }
 });

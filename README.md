@@ -57,3 +57,27 @@ For this repo specifically:
 - `pnpm dev:mobile:web`: start the mobile app directly in web mode
 - `pnpm dev:admin`: start the admin app
 - `pnpm dev:server`: start the FastAPI server
+
+## Chat API Setup
+
+The chat screen now calls the backend at `POST /api/chat`.
+
+Before using it, create a server env file from:
+
+- `apps/server/.env.example`
+
+Then set:
+
+- `CHAT_PROVIDER=codex` for local Codex CLI demo mode, or `openai` for OpenAI API mode
+- `CODEX_CLI_PATH` and `CODEX_WORKDIR` when using Codex mode
+- `OPENAI_API_KEY`
+- optionally `OPENAI_MODEL` if you do not want the default `gpt-5-mini`
+
+Suggested local flow:
+
+1. `cd apps/server`
+2. create and activate a Python virtualenv
+3. `pip install -e ".[dev]"`
+4. copy `.env.example` to `.env` and choose a chat provider
+5. from repo root run `pnpm dev:server`
+6. in another terminal run `pnpm dev:mobile:web`
