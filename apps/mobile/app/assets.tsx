@@ -1,38 +1,201 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import {
-  AppCard,
+  AppButton,
   AppInput,
   AppScreen,
   AppText
 } from "../src/components";
+import { API_BASE_URL, DEMO_USER_ID } from "../src/config/api";
 import { theme } from "../src/theme";
+
+type ApiNamedAmount = {
+  id: number;
+  name: string;
+  amount: number;
+};
+
+type AssetItem = {
+  id: string;
+  label: string;
+  value: string;
+  placeholder: string;
+};
 
 function parseAmount(value: string) {
   const normalized = Number(value.replace(/,/g, "").trim());
   return Number.isFinite(normalized) ? normalized : 0;
 }
 
-function formatWan(value: number) {
-  const wanValue = value / 10000;
-  return wanValue.toFixed(wanValue >= 10 ? 1 : 2);
-}
-
 export default function AssetsScreen() {
-  const [cash, setCash] = useState("30000");
-  const [deposit, setDeposit] = useState("50000");
-  const [funds, setFunds] = useState("28000");
-  const [stocks, setStocks] = useState("20000");
-  const [creditDebt, setCreditDebt] = useState("6800");
+  const [items, setItems] = useState<AssetItem[]>([
+    {
+      id: "cash",
+      label: "现金",
+      value: "30000",
+      placeholder: "例如 30000"
+    },
+    {
+      id: "deposit",
+      label: "存款",
+      value: "50000",
+      placeholder: "例如 50000"
+    },
+    {
+      id: "funds",
+      label: "基金",
+      value: "28000",
+      placeholder: "例如 28000"
+    },
+    {
+      id: "stocks",
+      label: "股票",
+      value: "20000",
+      placeholder: "例如 20000"
+    }
+  ]);
+  const [draftLabel, setDraftLabel] = useState("");
+  const [draftValue, setDraftValue] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  const totalAssets = useMemo(() => {
-    return [cash, deposit, funds, stocks].reduce(
-      (sum, item) => sum + parseAmount(item),
-      0
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAssets() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}/assets`);
+        if (!response.ok) {
+          throw new Error("Failed to load assets.");
+        }
+
+        const payload = (await response.json()) as { items: ApiNamedAmount[] };
+
+        if (!cancelled && payload.items.length > 0) {
+          setItems(
+            payload.items.map((item) => ({
+              id: String(item.id),
+              label: item.name,
+              value: String(item.amount),
+              placeholder: "例如 30000"
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setSaveMessage("暂时无法加载我的资产，先显示本地默认值。");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadAssets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function updateItem(id: string, value: string) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, value } : item))
     );
-  }, [cash, deposit, funds, stocks]);
+  }
+
+  function openAddModal() {
+    setDraftLabel("");
+    setDraftValue("");
+    setShowModal(true);
+  }
+
+  function closeAddModal() {
+    setDraftLabel("");
+    setDraftValue("");
+    setShowModal(false);
+  }
+
+  function submitDraft() {
+    const label = draftLabel.trim();
+    if (!label) {
+      return;
+    }
+
+    setItems((current) => [
+      ...current,
+      {
+        id: `asset-${current.length + 1}`,
+        label,
+        value: draftValue,
+        placeholder: "例如 30000"
+      }
+    ]);
+    closeAddModal();
+  }
+
+  async function handleSave() {
+    if (saving) {
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage("");
+
+    try {
+      const listResponse = await fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}/assets`);
+      if (!listResponse.ok) {
+        throw new Error("Failed to load assets.");
+      }
+
+      const listPayload = (await listResponse.json()) as { items: ApiNamedAmount[] };
+
+      const deleteResponses = await Promise.all(
+        listPayload.items.map((item) =>
+          fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}/assets/${item.id}`, {
+            method: "DELETE"
+          })
+        )
+      );
+
+      if (deleteResponses.some((response) => !response.ok)) {
+        throw new Error("Failed to clear assets.");
+      }
+
+      const createResponses = await Promise.all(
+        items
+          .filter((item) => item.label.trim())
+          .map((item) =>
+            fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}/assets`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                name: item.label.trim(),
+                amount: parseAmount(item.value)
+              })
+            })
+          )
+      );
+
+      if (createResponses.some((response) => !response.ok)) {
+        throw new Error("Failed to save assets.");
+      }
+
+      setSaveMessage("我的资产已保存。");
+      router.replace("/(tabs)/me");
+    } catch {
+      setSaveMessage("保存失败，请确认服务端是否正常运行。");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <AppScreen
@@ -48,97 +211,86 @@ export default function AssetsScreen() {
                 ‹
               </AppText>
             </Pressable>
-            <AppText variant="subtitle">资产信息</AppText>
+            <AppText variant="subtitle">我的资产</AppText>
           </View>
-          <AppText variant="body" color="textMuted">
-            Keep a lightweight picture of your available assets and short-term
-            liabilities so the app can understand your current financial base.
-          </AppText>
         </View>
       }
     >
-      <View style={styles.summaryRow}>
-        <AppCard tone="mint" style={styles.summaryCard}>
-          <AppText variant="eyebrow" color="textSubtle">
-            总资产
-          </AppText>
-          <View style={styles.summaryValueGroup}>
-            <AppText variant="heroNumber" color="primary">
-              {formatWan(totalAssets)}
-            </AppText>
-            <AppText variant="bodySmall" color="textMuted">
-              万元
-            </AppText>
-          </View>
-        </AppCard>
+      {loading ? (
+        <AppText variant="bodySmall" color="textMuted">
+          正在加载我的资产...
+        </AppText>
+      ) : null}
 
-        <AppCard tone="accent" style={styles.summaryCard}>
-          <AppText variant="eyebrow" color="textSubtle">
-            待还款项
+      <View style={styles.formGroup}>
+        {items.map((item) => (
+          <AppInput
+            key={item.id}
+            label={item.label}
+            value={item.value}
+            onChangeText={(value) => updateItem(item.id, value)}
+            placeholder={item.placeholder}
+            suffix="元"
+          />
+        ))}
+        <Pressable
+          onPress={openAddModal}
+          style={({ pressed }) => [styles.addIconButton, pressed && styles.backPressed]}
+        >
+          <AppText variant="subtitle" color="primary">
+            +
           </AppText>
-          <View style={styles.summaryValueGroup}>
-            <AppText variant="heroNumber" color="primary">
-              {formatWan(parseAmount(creditDebt))}
-            </AppText>
-            <AppText variant="bodySmall" color="textMuted">
-              万元
-            </AppText>
-          </View>
-        </AppCard>
+        </Pressable>
       </View>
 
-      <AppCard>
-        <AppText variant="subtitle">资产信息</AppText>
+      <AppButton
+        label={saving ? "保存中..." : "保存"}
+        style={styles.saveButton}
+        onPress={handleSave}
+      />
+      {saveMessage ? (
         <AppText variant="bodySmall" color="textMuted">
-          先录入比较常见的资产类型，后面如果需要，我们再支持更多资产科目。
+          {saveMessage}
         </AppText>
-        <View style={styles.formGroup}>
-          <AppInput
-            label="现金"
-            value={cash}
-            onChangeText={setCash}
-            placeholder="例如 30000"
-            suffix="元"
-          />
-          <AppInput
-            label="存款"
-            value={deposit}
-            onChangeText={setDeposit}
-            placeholder="例如 50000"
-            suffix="元"
-          />
-          <AppInput
-            label="基金"
-            value={funds}
-            onChangeText={setFunds}
-            placeholder="例如 28000"
-            suffix="元"
-          />
-          <AppInput
-            label="股票"
-            value={stocks}
-            onChangeText={setStocks}
-            placeholder="例如 20000"
-            suffix="元"
-          />
-        </View>
-      </AppCard>
+      ) : null}
 
-      <AppCard>
-        <AppText variant="subtitle">负债信息</AppText>
-        <AppText variant="bodySmall" color="textMuted">
-          先记录短期最常见的待还款项，便于后续一起分析净资产和资金压力。
-        </AppText>
-        <View style={styles.formGroup}>
-          <AppInput
-            label="信用卡待还"
-            value={creditDebt}
-            onChangeText={setCreditDebt}
-            placeholder="例如 6800"
-            suffix="元"
-          />
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="fade"
+        onRequestClose={closeAddModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <AppText variant="subtitle">添加资产项</AppText>
+            <View style={styles.formGroup}>
+              <AppInput
+                label="资产名称"
+                value={draftLabel}
+                onChangeText={setDraftLabel}
+                placeholder="例如 黄金 / 理财 / 债券"
+                keyboardType="default"
+              />
+              <AppInput
+                label="金额"
+                value={draftValue}
+                onChangeText={setDraftValue}
+                placeholder="例如 30000"
+                suffix="元"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <Pressable onPress={closeAddModal} style={styles.textAction}>
+                <AppText variant="bodySmall" color="textMuted">
+                  取消
+                </AppText>
+              </Pressable>
+              <AppButton label="确认添加" onPress={submitDraft} />
+            </View>
+          </View>
         </View>
-      </AppCard>
+      </Modal>
     </AppScreen>
   );
 }
@@ -165,19 +317,46 @@ const styles = StyleSheet.create({
   backPressed: {
     opacity: 0.86
   },
-  summaryRow: {
-    flexDirection: "row",
-    gap: theme.spacing.md
-  },
-  summaryCard: {
-    flex: 1,
-    minHeight: 156
-  },
-  summaryValueGroup: {
-    gap: theme.spacing.xs
-  },
   formGroup: {
     gap: theme.spacing.lg
+  },
+  addIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: theme.radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface
+  },
+  saveButton: {
+    marginTop: theme.spacing.xs
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    padding: theme.spacing.xl,
+    backgroundColor: "rgba(10, 22, 19, 0.34)"
+  },
+  modalCard: {
+    gap: theme.spacing.lg,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.xl
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: theme.spacing.md
+  },
+  textAction: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: theme.spacing.sm
   }
 });
-

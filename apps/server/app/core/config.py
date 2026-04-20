@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Finance Agent API"
     api_prefix: str = "/api"
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/finance_agent"
+    database_url: str = "sqlite:///./finance_agent.db"
     chat_provider: str = "codex"
     codex_cli_path: str = "codex"
     codex_workdir: str = "/Users/ellaxin/workspace/finance-platform"

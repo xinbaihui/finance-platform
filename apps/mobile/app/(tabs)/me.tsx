@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -6,62 +7,48 @@ import {
   AppScreen,
   AppText
 } from "../../src/components";
+import { API_BASE_URL, DEMO_USER_ID } from "../../src/config/api";
 import { theme } from "../../src/theme";
 
-const profile = {
-  name: "Ellaxin",
-  subtitle: "平衡型建议 · 关注重点：储蓄与现金流",
-  annualGoal: "今年目标：存够 ¥60,000"
-};
+const CURRENT_YEAR = 2026;
 
-const quickStats = [
-  {
-    label: "当前资产",
-    value: "12.8",
-    unit: "万元"
-  },
-  {
-    label: "目标存入",
-    value: "6.0",
-    unit: "万元"
-  }
+const metrics = [
+  { title: "我的资产", key: "assetTotal", href: "/assets", tone: "asset" },
+  { title: "年度收入", key: "annualIncome", href: "/planning-income", tone: "income" },
+  { title: "年度支出", key: "annualExpense", href: "/planning-expense", tone: "expense" },
+  { title: "储蓄目标", key: "savingTarget", href: "/savings", tone: "saving" }
 ] as const;
 
-const targetProgress = {
-  current: 128000,
-  goal: 200000
-};
-
-const shortcuts = [
-  {
-    title: "年度财务规划",
-    description: "收入、固定支出、储蓄目标与大额支出计划"
-  },
-  {
-    title: "资产信息",
-    description: "现金、存款、基金 / 股票与待还款项"
-  }
-] as const;
-
-function EntryCard({
+function MetricCard({
   title,
-  description,
-  href
+  value,
+  href,
+  tone
 }: {
   title: string;
-  description: string;
-  href?: "/planning" | "/assets";
+  value: string;
+  href?: "/planning-income" | "/planning-expense" | "/assets" | "/savings";
+  tone: "asset" | "income" | "expense" | "saving";
 }) {
   return (
     <Pressable
       onPress={href ? () => router.push(href) : undefined}
-      style={({ pressed }) => [styles.entryCard, pressed && styles.entryPressed]}
+      style={({ pressed }) => [
+        styles.entryCard,
+        toneStyles[tone],
+        pressed && href && styles.entryPressed
+      ]}
     >
       <View style={styles.entryCopy}>
         <AppText variant="subtitle">{title}</AppText>
-        <AppText variant="bodySmall" color="textMuted">
-          {description}
-        </AppText>
+        <View style={styles.metricValue}>
+          <AppText variant="stat" color="primary">
+            {value}
+          </AppText>
+          <AppText variant="bodySmall" color="textMuted">
+            万元
+          </AppText>
+        </View>
       </View>
       <AppText variant="subtitle" color="textSubtle">
         ›
@@ -71,78 +58,128 @@ function EntryCard({
 }
 
 export default function MeTab() {
-  const completionRate = Math.min(
-    targetProgress.current / targetProgress.goal,
-    1
-  );
+  const [name, setName] = useState("EllaXin");
+  const [assetTotal, setAssetTotal] = useState(0);
+  const [annualIncome, setAnnualIncome] = useState(0);
+  const [annualExpense, setAnnualExpense] = useState(0);
+  const [savingTarget, setSavingTarget] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        const [
+          profileResponse,
+          assetsResponse,
+          incomeResponse,
+          expenseResponse,
+          savingTargetResponse
+        ] = await Promise.all([
+          fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}`),
+          fetch(`${API_BASE_URL}/users/${DEMO_USER_ID}/assets/current-value`),
+          fetch(
+            `${API_BASE_URL}/users/${DEMO_USER_ID}/annual-income?year=${CURRENT_YEAR}`
+          ),
+          fetch(
+            `${API_BASE_URL}/users/${DEMO_USER_ID}/annual-expenses?year=${CURRENT_YEAR}`
+          ),
+          fetch(
+            `${API_BASE_URL}/users/${DEMO_USER_ID}/annual-saving-target?year=${CURRENT_YEAR}`
+          )
+        ]);
+
+        if (
+          !profileResponse.ok ||
+          !assetsResponse.ok ||
+          !incomeResponse.ok ||
+          !expenseResponse.ok ||
+          !savingTargetResponse.ok
+        ) {
+          throw new Error("Failed to load profile data.");
+        }
+
+        const profilePayload = (await profileResponse.json()) as { name: string };
+        const assetsPayload = (await assetsResponse.json()) as { total_amount: number };
+        const incomePayload = (await incomeResponse.json()) as { total_amount: number };
+        const expensePayload = (await expenseResponse.json()) as { total_amount: number };
+        const savingTargetPayload = (await savingTargetResponse.json()) as {
+          amount: number;
+        };
+
+        if (!cancelled) {
+          setName(profilePayload.name);
+          setAssetTotal(assetsPayload.total_amount);
+          setAnnualIncome(incomePayload.total_amount);
+          setAnnualExpense(expensePayload.total_amount);
+          setSavingTarget(savingTargetPayload.amount);
+        }
+      } catch {
+        if (!cancelled) {
+          setName("EllaXin");
+          setAssetTotal(0);
+          setAnnualIncome(0);
+          setAnnualExpense(0);
+          setSavingTarget(0);
+        }
+      }
+    }
+
+    void loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const assetTotalWan = useMemo(() => {
+    return (assetTotal / 10000).toFixed(assetTotal >= 100000 ? 1 : 2);
+  }, [assetTotal]);
+
+  const annualIncomeWan = useMemo(() => {
+    return (annualIncome / 10000).toFixed(annualIncome >= 100000 ? 1 : 2);
+  }, [annualIncome]);
+
+  const annualExpenseWan = useMemo(() => {
+    return (annualExpense / 10000).toFixed(annualExpense >= 100000 ? 1 : 2);
+  }, [annualExpense]);
+
+  const savingTargetWan = useMemo(() => {
+    return (savingTarget / 10000).toFixed(savingTarget >= 100000 ? 1 : 2);
+  }, [savingTarget]);
+
+  const metricValues = {
+    assetTotal: assetTotalWan,
+    annualIncome: annualIncomeWan,
+    annualExpense: annualExpenseWan,
+    savingTarget: savingTargetWan
+  } as const;
 
   return (
     <AppScreen scrollable>
-      <AppCard style={styles.profileCard}>
-        <View style={styles.profileCopy}>
-          <AppText variant="title" color="white">
-            {profile.name}
-          </AppText>
-          <AppText variant="body" color="white" style={styles.profileBody}>
-            {profile.subtitle}
-          </AppText>
-          <AppText variant="bodySmall" color="white" style={styles.profileGoal}>
-            {profile.annualGoal}
-          </AppText>
-        </View>
-      </AppCard>
-
-      <View style={styles.quickStatsRow}>
-        {quickStats.map((item) => (
-          <View key={item.label} style={styles.quickStatItem}>
-            <View style={styles.quickStatCircle}>
-              <AppText variant="subtitle" color="primaryDark">
-                {item.value}
-              </AppText>
-              <AppText variant="bodySmall" color="textMuted">
-                {item.unit}
-              </AppText>
-            </View>
-            <AppText variant="bodySmall" color="textMuted">
-              {item.label}
+      <AppCard>
+        <View style={styles.profileRow}>
+          <View style={styles.avatar}>
+            <AppText variant="subtitle" color="primaryDark">
+              E
             </AppText>
           </View>
-        ))}
-      </View>
-
-      <AppCard tone="mint">
-        <View style={styles.progressHeader}>
-          <AppText variant="subtitle">目标完成度</AppText>
-          <AppText variant="bodySmall" color="textMuted">
-            {Math.round(completionRate * 100)}%
-          </AppText>
+          <View style={styles.profileCopy}>
+            <AppText variant="title">
+              {name}
+            </AppText>
+          </View>
         </View>
-        <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${Math.max(completionRate * 100, 8)}%` }
-            ]}
-          />
-        </View>
-        <AppText variant="bodySmall" color="textMuted">
-          当前资产 ¥128,000 / 目标存入 ¥200,000
-        </AppText>
       </AppCard>
 
-      <View style={styles.shortcutGroup}>
-        {shortcuts.map((item) => (
-          <EntryCard
-            key={item.title}
+      <View style={styles.metricGroup}>
+        {metrics.map((item) => (
+          <MetricCard
+            key={item.key}
             title={item.title}
-            description={item.description}
-            href={
-              item.title === "年度财务规划"
-                ? "/planning"
-                : item.title === "资产信息"
-                  ? "/assets"
-                  : undefined
-            }
+            value={metricValues[item.key]}
+            href={item.href}
+            tone={item.tone}
           />
         ))}
       </View>
@@ -151,64 +188,30 @@ export default function MeTab() {
 }
 
 const styles = StyleSheet.create({
-  profileCard: {
-    backgroundColor: theme.colors.primaryDark,
-    borderColor: theme.colors.primaryDark
-  },
-  profileCopy: {
-    gap: theme.spacing.xs
-  },
-  profileBody: {
-    color: "rgba(255,255,255,0.82)"
-  },
-  profileGoal: {
-    color: "rgba(255,255,255,0.72)",
-    marginTop: theme.spacing.xs
-  },
-  shortcutGroup: {
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.md
   },
-  quickStatsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: theme.spacing.lg
-  },
-  quickStatItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: theme.spacing.sm
-  },
-  quickStatCircle: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    backgroundColor: theme.colors.surfaceTint,
-    borderWidth: 1,
-    borderColor: "#d1e9df",
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    shadowColor: "#102722",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.06,
-    shadowRadius: 28,
-    elevation: 3
+    backgroundColor: theme.colors.surfaceTint
   },
-  progressHeader: {
+  profileCopy: {
+    gap: theme.spacing.xs,
+    flex: 1
+  },
+  metricGroup: {
+    gap: theme.spacing.md
+  },
+  metricValue: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  progressTrack: {
-    height: 12,
-    borderRadius: theme.radii.pill,
-    backgroundColor: "#dcefe8",
-    overflow: "hidden"
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: theme.radii.pill,
-    backgroundColor: theme.colors.primary
+    alignItems: "baseline",
+    gap: 4
   },
   entryCard: {
     backgroundColor: theme.colors.surface,
@@ -233,5 +236,24 @@ const styles = StyleSheet.create({
   },
   entryPressed: {
     opacity: 0.9
+  }
+});
+
+const toneStyles = StyleSheet.create({
+  asset: {
+    backgroundColor: "#edf8f2",
+    borderColor: "#d6eadf"
+  },
+  income: {
+    backgroundColor: "#eef4ff",
+    borderColor: "#d8e3fb"
+  },
+  expense: {
+    backgroundColor: "#fff4eb",
+    borderColor: "#f2dfcc"
+  },
+  saving: {
+    backgroundColor: "#f1fbf7",
+    borderColor: "#d7eee4"
   }
 });

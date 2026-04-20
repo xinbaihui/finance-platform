@@ -1,66 +1,45 @@
-import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 import {
   AppCard,
   AppScreen,
   AppText
 } from "../../src/components";
+import { API_BASE_URL, DEMO_USER_ID } from "../../src/config/api";
 import { theme } from "../../src/theme";
 
-type Scope = "yearly" | "monthly";
+type AnalysisCategory = {
+  name: string;
+  amount: number;
+  ratio: number;
+};
+
+type AnalysisResponse = {
+  metrics: {
+    income: number;
+    expense: number;
+    saved: number;
+    target_rate: number;
+  };
+  categories: AnalysisCategory[];
+  forecast: {
+    projected_year_expense: number;
+    projected_overspend: number;
+    projected_year_saving: number;
+    target_gap: number;
+  };
+  insights: string[];
+};
 
 const CURRENT_YEAR = 2026;
-const CURRENT_MONTH = 4;
-const yearlyOptions = [CURRENT_YEAR];
-const monthlyOptions = Array.from({ length: CURRENT_MONTH }, (_, index) => index + 1);
+const categoryColors = ["#ef6a5b", "#2563eb", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4"];
 
-const yearlyMetrics = {
-  income: "7.2 万元",
-  expense: "3.2 万元",
-  saved: "1.9 万元",
-  target: "31%"
-};
-
-const monthlyMetrics = {
-  income: "1.8 万元",
-  expense: "0.8 万元",
-  saved: "0.5 万元",
-  target: "67%"
-};
-
-const categories = [
-  {
-    name: "住房",
-    amount: "1.23 万元",
-    ratio: 38,
-    color: "#ef6a5b"
-  },
-  {
-    name: "餐饮",
-    amount: "0.78 万元",
-    ratio: 24,
-    color: "#2563eb"
-  },
-  {
-    name: "购物",
-    amount: "0.58 万元",
-    ratio: 18,
-    color: "#f59e0b"
-  },
-  {
-    name: "其他",
-    amount: "0.65 万元",
-    ratio: 20,
-    color: "#10b981"
-  }
-] as const;
-
-const insights = [
-  "住房占比稳定，但餐饮与购物仍是超支主因。",
-  "按当前支出速度，全年预计支出 97,200，较年度预算超支 9,200。",
-  "若接下来两个月减少高频可变支出，年度储蓄目标仍有机会追回。"
-] as const;
+function formatWan(value: number) {
+  const wanValue = value / 10000;
+  return `${wanValue.toFixed(wanValue >= 10 ? 1 : 2)} 万元`;
+}
 
 function AmountValue({ value }: { value: string }) {
   const [number, unit] = value.split(" ");
@@ -92,17 +71,155 @@ function InlineAmountValue({ value }: { value: string }) {
   );
 }
 
-export default function AnalysisTab() {
-  const [scope, setScope] = useState<Scope>("yearly");
-  const [selectedYear] = useState(CURRENT_YEAR);
-  const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH);
-  const [yearMenuOpen, setYearMenuOpen] = useState(false);
-  const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+function PieChart({
+  categories
+}: {
+  categories: Array<AnalysisCategory & { color: string; amount: string }>;
+}) {
+  const size = 156;
+  const strokeWidth = 24;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
 
-  const metrics = useMemo(
-    () => (scope === "yearly" ? yearlyMetrics : monthlyMetrics),
-    [scope]
+  let cumulativeRatio = 0;
+
+  return (
+    <View style={styles.pieChartWrap}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#e2ece7"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {categories.map((item) => {
+          const dash = (item.ratio / 100) * circumference;
+          const gap = circumference - dash;
+          const segment = (
+            <Circle
+              key={item.name}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke={item.color}
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={-((cumulativeRatio / 100) * circumference)}
+              strokeLinecap="butt"
+              rotation="-90"
+              origin={`${size / 2}, ${size / 2}`}
+            />
+          );
+          cumulativeRatio += item.ratio;
+          return segment;
+        })}
+      </Svg>
+      <View style={styles.pieChartCenter}>
+        <AppText variant="bodySmall" color="textMuted">
+          支出
+        </AppText>
+        <AppText variant="subtitle">结构</AppText>
+      </View>
+    </View>
   );
+}
+
+export default function AnalysisTab() {
+  const [selectedYear] = useState(CURRENT_YEAR);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAnalysis() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const query = new URLSearchParams({
+          year: String(selectedYear),
+          scope: "yearly",
+          month: "4"
+        });
+        const response = await fetch(
+          `${API_BASE_URL}/users/${DEMO_USER_ID}/analysis?${query.toString()}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load analysis.");
+        }
+
+        const payload = (await response.json()) as AnalysisResponse;
+        if (!cancelled) {
+          setAnalysis(payload);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("暂时无法加载分析数据。");
+          setAnalysis(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadAnalysis();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedYear]);
+
+  const metrics = useMemo(() => {
+    if (!analysis) {
+      return {
+        income: "0.00 万元",
+        expense: "0.00 万元",
+        saved: "0.00 万元",
+        target: "0%"
+      };
+    }
+
+    return {
+      income: formatWan(analysis.metrics.income),
+      expense: formatWan(analysis.metrics.expense),
+      saved: formatWan(analysis.metrics.saved),
+      target: `${analysis.metrics.target_rate}%`
+    };
+  }, [analysis]);
+
+  const categories = useMemo(() => {
+    return (analysis?.categories ?? []).map((item, index) => ({
+      ...item,
+      amount: formatWan(item.amount),
+      color: categoryColors[index % categoryColors.length]
+    }));
+  }, [analysis]);
+
+  const forecast = useMemo(() => {
+    if (!analysis) {
+      return {
+        projectedYearExpense: "0.00 万元",
+        projectedOverspend: "0.00 万元",
+        projectedYearSaving: "0.00 万元",
+        targetGap: "0.00 万元"
+      };
+    }
+
+    return {
+      projectedYearExpense: formatWan(analysis.forecast.projected_year_expense),
+      projectedOverspend: formatWan(analysis.forecast.projected_overspend),
+      projectedYearSaving: formatWan(analysis.forecast.projected_year_saving),
+      targetGap: formatWan(analysis.forecast.target_gap)
+    };
+  }, [analysis]);
 
   return (
     <AppScreen scrollable>
@@ -112,148 +229,72 @@ export default function AnalysisTab() {
         </AppText>
       </View>
 
-      <View style={styles.toolbar}>
-        <View style={styles.scopeSwitch}>
-          <Pressable
-            onPress={() => setScope("yearly")}
-            style={[
-              styles.scopeButton,
-              scope === "yearly" && styles.scopeButtonActive
-            ]}
-          >
-            <AppText
-              variant="bodySmall"
-              color={scope === "yearly" ? "white" : "textMuted"}
-            >
-              年度
-            </AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => setScope("monthly")}
-            style={[
-              styles.scopeButton,
-              scope === "monthly" && styles.scopeButtonActive
-            ]}
-          >
-            <AppText
-              variant="bodySmall"
-              color={scope === "monthly" ? "white" : "textMuted"}
-            >
-              月度
-            </AppText>
-          </Pressable>
-        </View>
-
-        <View style={styles.dropdownWrap}>
-          {scope === "yearly" ? (
-            <View style={styles.dropdownContainer}>
-              <Pressable
-                onPress={() => setYearMenuOpen((open) => !open)}
-                style={({ pressed }) => [
-                  styles.dropdownTrigger,
-                  pressed && styles.dropdownPressed
-                ]}
-              >
-                <AppText variant="bodySmall" color="textMuted">
-                  {selectedYear} 年
-                </AppText>
-                <AppText variant="bodySmall" color="textSubtle">
-                  ▾
-                </AppText>
-              </Pressable>
-              {yearMenuOpen ? (
-                <View style={styles.dropdownMenu}>
-                  {yearlyOptions.map((year) => (
-                    <Pressable
-                      key={year}
-                      onPress={() => setYearMenuOpen(false)}
-                      style={styles.dropdownItem}
-                    >
-                      <AppText variant="bodySmall">{year} 年</AppText>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.dropdownContainer}>
-              <Pressable
-                onPress={() => setMonthMenuOpen((open) => !open)}
-                style={({ pressed }) => [
-                  styles.dropdownTrigger,
-                  pressed && styles.dropdownPressed
-                ]}
-              >
-                <AppText variant="bodySmall" color="textMuted">
-                  {selectedMonth} 月
-                </AppText>
-                <AppText variant="bodySmall" color="textSubtle">
-                  ▾
-                </AppText>
-              </Pressable>
-              {monthMenuOpen ? (
-                <View style={styles.dropdownMenu}>
-                  {monthlyOptions.map((month) => (
-                    <Pressable
-                      key={month}
-                      onPress={() => {
-                        setSelectedMonth(month);
-                        setMonthMenuOpen(false);
-                      }}
-                      style={styles.dropdownItem}
-                    >
-                      <AppText variant="bodySmall">{month} 月</AppText>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          )}
-        </View>
-      </View>
+      {loading ? (
+        <AppText variant="bodySmall" color="textMuted">
+          正在加载分析数据...
+        </AppText>
+      ) : null}
+      {error ? (
+        <AppText variant="bodySmall" color="textMuted">
+          {error}
+        </AppText>
+      ) : null}
 
       <View style={styles.metricGrid}>
         <AppCard tone="mint" style={styles.metricCard}>
           <AppText variant="eyebrow" color="textSubtle">
-            {scope === "yearly" ? "年度总收入" : "本月收入"}
+            当前收入
           </AppText>
           <AmountValue value={metrics.income} />
         </AppCard>
 
         <AppCard tone="accent" style={styles.metricCard}>
           <AppText variant="eyebrow" color="textSubtle">
-            {scope === "yearly" ? "年度总支出" : "本月支出"}
+            当前支出
           </AppText>
           <AmountValue value={metrics.expense} />
         </AppCard>
       </View>
 
-      <View style={styles.metricGrid}>
-        <AppCard style={styles.metricCard}>
+      <AppCard>
+        <View style={styles.progressHeader}>
           <AppText variant="eyebrow" color="textSubtle">
-            {scope === "yearly" ? "年度已储蓄" : "本月结余"}
+            当前储蓄
           </AppText>
-          <AmountValue value={metrics.saved} />
-        </AppCard>
-
-        <AppCard style={styles.metricCard}>
-          <AppText variant="eyebrow" color="textSubtle">
+          <InlineAmountValue value={metrics.saved} />
+        </View>
+        <View style={styles.progressTrack}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: metrics.target
+              }
+            ]}
+          />
+        </View>
+        <View style={styles.progressFooter}>
+          <AppText variant="bodySmall" color="textMuted">
             目标完成
           </AppText>
-          <AppText variant="stat">{metrics.target}</AppText>
-        </AppCard>
-      </View>
+          <AppText variant="bodySmall" color="textMuted">
+            {metrics.target}
+          </AppText>
+        </View>
+      </AppCard>
 
       <AppCard>
         <AppText variant="subtitle">支出结构</AppText>
-        <AppText variant="bodySmall" color="textMuted">
-          先用比例条展示主要支出分类，后面可以升级成饼图和趋势图。
-        </AppText>
+        {categories.length > 0 ? (
+          <View style={styles.pieSection}>
+            <PieChart categories={categories} />
+          </View>
+        ) : null}
         <View style={styles.categoryList}>
           {categories.map((item) => (
             <View key={item.name} style={styles.categoryItem}>
               <View style={styles.categoryHeader}>
-              <View style={styles.categoryTitleWrap}>
+                <View style={styles.categoryTitleWrap}>
                   <View
                     style={[styles.categoryDot, { backgroundColor: item.color }]}
                   />
@@ -279,6 +320,11 @@ export default function AnalysisTab() {
               </View>
             </View>
           ))}
+          {!loading && categories.length === 0 ? (
+            <AppText variant="bodySmall" color="textMuted">
+              暂无支出结构数据。
+            </AppText>
+          ) : null}
         </View>
       </AppCard>
 
@@ -289,25 +335,25 @@ export default function AnalysisTab() {
             <AppText variant="body" color="textMuted">
               预计全年支出
             </AppText>
-            <InlineAmountValue value="9.7 万元" />
+            <InlineAmountValue value={forecast.projectedYearExpense} />
           </View>
           <View style={styles.forecastRow}>
             <AppText variant="body" color="textMuted">
               预计超支
             </AppText>
-            <InlineAmountValue value="0.9 万元" />
+            <InlineAmountValue value={forecast.projectedOverspend} />
           </View>
           <View style={styles.forecastRow}>
             <AppText variant="body" color="textMuted">
               年底预计储蓄
             </AppText>
-            <InlineAmountValue value="5.6 万元" />
+            <InlineAmountValue value={forecast.projectedYearSaving} />
           </View>
           <View style={styles.forecastRow}>
             <AppText variant="body" color="textMuted">
               离年度目标还差
             </AppText>
-            <InlineAmountValue value="0.4 万元" />
+            <InlineAmountValue value={forecast.targetGap} />
           </View>
         </View>
       </AppCard>
@@ -315,7 +361,7 @@ export default function AnalysisTab() {
       <AppCard>
         <AppText variant="subtitle">AI 洞察</AppText>
         <View style={styles.insightList}>
-          {insights.map((item) => (
+          {(analysis?.insights ?? []).map((item) => (
             <View key={item} style={styles.insightItem}>
               <View style={styles.insightMarker} />
               <AppText variant="bodySmall" color="textMuted" style={styles.insightText}>
@@ -323,6 +369,11 @@ export default function AnalysisTab() {
               </AppText>
             </View>
           ))}
+          {!loading && (analysis?.insights.length ?? 0) === 0 ? (
+            <AppText variant="bodySmall" color="textMuted">
+              暂无洞察。
+            </AppText>
+          ) : null}
         </View>
       </AppCard>
     </AppScreen>
@@ -330,85 +381,11 @@ export default function AnalysisTab() {
 }
 
 const styles = StyleSheet.create({
-  toolbar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: theme.spacing.md,
-    zIndex: 30
-  },
   pageHeader: {
     alignItems: "center"
   },
   pageTitle: {
     textAlign: "center"
-  },
-  scopeSwitch: {
-    flexDirection: "row",
-    padding: 4,
-    borderRadius: theme.radii.pill,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border
-  },
-  scopeButton: {
-    minWidth: 72,
-    minHeight: 36,
-    borderRadius: theme.radii.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: theme.spacing.md
-  },
-  scopeButtonActive: {
-    backgroundColor: theme.colors.primaryDark
-  },
-  dropdownWrap: {
-    alignItems: "flex-end",
-    flex: 1,
-    zIndex: 40
-  },
-  dropdownContainer: {
-    position: "relative",
-    minWidth: 108,
-    zIndex: 50
-  },
-  dropdownTrigger: {
-    minHeight: 36,
-    borderRadius: theme.radii.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.md,
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexDirection: "row",
-    gap: theme.spacing.sm
-  },
-  dropdownPressed: {
-    opacity: 0.9
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 44,
-    right: 0,
-    minWidth: 108,
-    borderRadius: theme.radii.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    paddingVertical: theme.spacing.xs,
-    shadowColor: "#102722",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 4,
-    zIndex: 10
-  },
-  dropdownItem: {
-    minHeight: 40,
-    paddingHorizontal: theme.spacing.md,
-    alignItems: "flex-start",
-    justifyContent: "center"
   },
   metricGrid: {
     flexDirection: "row",
@@ -430,6 +407,21 @@ const styles = StyleSheet.create({
   },
   categoryList: {
     gap: theme.spacing.lg
+  },
+  pieSection: {
+    alignItems: "center",
+    paddingVertical: theme.spacing.sm
+  },
+  pieChartWrap: {
+    width: 156,
+    height: 156,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  pieChartCenter: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center"
   },
   categoryItem: {
     gap: theme.spacing.sm
@@ -466,6 +458,29 @@ const styles = StyleSheet.create({
     borderRadius: theme.radii.pill
   },
   forecastBlock: {
+    gap: theme.spacing.md
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: theme.spacing.md
+  },
+  progressTrack: {
+    height: 10,
+    borderRadius: theme.radii.pill,
+    backgroundColor: "#e2ece7",
+    overflow: "hidden"
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: theme.radii.pill,
+    backgroundColor: theme.colors.primary
+  },
+  progressFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: theme.spacing.md
   },
   forecastRow: {
