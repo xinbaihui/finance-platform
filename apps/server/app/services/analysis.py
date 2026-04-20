@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional, Union
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -32,7 +32,9 @@ class AnalysisSnapshot:
     current_asset_total: int
 
 
-def to_annual_amount(item: AnnualIncomeItem | AnnualExpenseItem | AssetItem) -> int:
+def to_annual_amount(
+    item: Union[AnnualIncomeItem, AnnualExpenseItem, AssetItem]
+) -> int:
     """Convert a yearly or monthly item into its annualized amount."""
 
     period = getattr(item, "period", "year")
@@ -40,7 +42,7 @@ def to_annual_amount(item: AnnualIncomeItem | AnnualExpenseItem | AssetItem) -> 
 
 
 def to_current_amount(
-    item: AnnualIncomeItem | AnnualExpenseItem, elapsed_months: int
+    item: Union[AnnualIncomeItem, AnnualExpenseItem], elapsed_months: int
 ) -> int:
     """Convert an item into the amount that should have occurred by the current month."""
 
@@ -52,7 +54,7 @@ def build_analysis_snapshot(
     db: Session,
     user_id: str,
     year: int,
-    month: int | None = None,
+    month: Optional[int] = None,
 ) -> AnalysisSnapshot:
     """Load raw financial records and compute a reusable snapshot for analysis."""
 
@@ -257,7 +259,7 @@ def simulate_financial_scenario(
     snapshot: AnalysisSnapshot,
     income_delta: int = 0,
     expense_delta: int = 0,
-    saving_target: int | None = None,
+    saving_target: Optional[int] = None,
 ) -> dict:
     """Run a simple what-if simulation for chat questions like 'what if I spend less?'."""
 

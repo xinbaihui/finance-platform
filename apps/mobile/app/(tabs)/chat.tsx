@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { AppCard, AppScreen, AppText } from "../../src/components";
+import { API_BASE_URL, DEMO_USER_ID } from "../../src/config/api";
 import { theme } from "../../src/theme";
 
 const quickTags = ["本月分析", "全年预测", "目标差距"] as const;
@@ -43,12 +44,17 @@ export default function ChatTab() {
     setSending(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ message: content })
+        body: JSON.stringify({
+          user_id: DEMO_USER_ID,
+          message: content,
+          year: 2026,
+          month: 4
+        })
       });
 
       if (!response.ok) {
@@ -100,8 +106,11 @@ export default function ChatTab() {
 
         <View style={styles.headerDivider} />
 
-        <View style={styles.chatArea}>
-          <View style={styles.messageStack}>
+        <ScrollView
+          style={styles.chatArea}
+          contentContainerStyle={styles.messageStack}
+          showsVerticalScrollIndicator
+        >
             {messages.map((item) =>
               item.role === "assistant" ? (
                 <AppCard
@@ -140,8 +149,7 @@ export default function ChatTab() {
                 </View>
               </AppCard>
             ) : null}
-          </View>
-        </View>
+        </ScrollView>
 
         <View style={styles.footerDivider} />
 
@@ -203,15 +211,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border
   },
   chatArea: {
-    flex: 1,
-    justifyContent: "flex-end"
+    flex: 1
   },
   footerDivider: {
     height: 1,
     backgroundColor: theme.colors.border
   },
   messageStack: {
-    gap: theme.spacing.md
+    gap: theme.spacing.md,
+    paddingRight: theme.spacing.xs
   },
   assistantCard: {
     shadowOpacity: 0.04
