@@ -2,12 +2,14 @@ import json
 import re
 import subprocess
 import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, OpenAI, RateLimitError
 from pydantic import BaseModel, Field
+from starlette.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -163,6 +165,20 @@ def build_model_prompt(message: str, context: dict[str, Any]) -> str:
     )
 
 
+def format_sse_event(event: str, data: dict[str, Any]) -> str:
+    """Serialize one SSE event frame."""
+
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+def split_reply_chunks(reply: str) -> list[str]:
+    """Split the final reply into small chunks so the client can render progressively."""
+
+    chunks = [segment.strip() for segment in re.split(r"(?<=[。！？\n])", reply) if segment.strip()]
+    return chunks or [reply]
+
+
 def create_openai_reply(prompt: str) -> str:
     """Generate a chat reply through the OpenAI Responses API."""
 
@@ -253,6 +269,80 @@ def create_codex_reply(prompt: str) -> str:
     return reply
 
 
+def stream_chat_reply(payload: ChatRequest, db: Session) -> Iterator[str]:
+    """Yield status, tool, chunk, and done events for the chat SSE endpoint."""
+
+    yield format_sse_event("status", {"message": "正在读取财务数据"})
+
+    sections = select_context_sections(payload.message)
+    snapshot = build_analysis_snapshot(db, payload.user_id, payload.year, payload.month)
+    context: dict[str, Any] = {}
+
+    tool_builders: dict[str, tuple[str, Any]] = {
+        "overview": ("财务快照", build_overview_context),
+        "saving_goal": ("储蓄目标分析", analyze_saving_goal),
+        "spending_breakdown": ("支出结构分析", analyze_spending_breakdown),
+        "projection": ("全年预测分析", build_projection),
+        "recommendation_input": ("建议输入准备", build_recommendation_input),
+    }
+
+    for section in sections:
+        if section == "what_if":
+            yield format_sse_event(
+                "tool",
+                {"name": section, "status": "started", "label": "情景模拟开始"},
+            )
+            adjustments = parse_what_if_adjustments(payload.message)
+            context[section] = simulate_financial_scenario(
+                snapshot,
+                income_delta=int(adjustments["income_delta"] or 0),
+                expense_delta=int(adjustments["expense_delta"] or 0),
+                saving_target=(
+                    int(adjustments["saving_target"])
+                    if adjustments["saving_target"] is not None
+                    else None
+                ),
+            )
+            yield format_sse_event(
+                "tool",
+                {"name": section, "status": "done", "label": "情景模拟完成"},
+            )
+            continue
+
+        if section not in tool_builders:
+            continue
+
+        label, builder = tool_builders[section]
+        yield format_sse_event(
+            "tool",
+            {"name": section, "status": "started", "label": f"{label}开始"},
+        )
+        context[section] = builder(snapshot)
+        yield format_sse_event(
+            "tool",
+            {"name": section, "status": "done", "label": f"{label}完成"},
+        )
+
+    yield format_sse_event("status", {"message": "正在生成回复"})
+    prompt = build_model_prompt(payload.message, context)
+
+    provider = settings.chat_provider.lower()
+    if provider == "codex":
+        reply = create_codex_reply(prompt)
+    elif provider == "openai":
+        reply = create_openai_reply(prompt)
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unsupported chat provider: {settings.chat_provider}",
+        )
+
+    for chunk in split_reply_chunks(reply):
+        yield format_sse_event("chunk", {"text": chunk})
+
+    yield format_sse_event("done", {"reply": reply})
+
+
 @chat_router.post("", response_model=ChatResponse)
 def create_chat_reply(
     payload: ChatRequest,
@@ -275,3 +365,29 @@ def create_chat_reply(
         )
 
     return ChatResponse(reply=reply)
+
+
+@chat_router.post("/stream")
+def create_streaming_chat_reply(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """Stream chat execution progress and the final answer through SSE."""
+
+    def event_generator() -> Iterator[str]:
+        try:
+            yield from stream_chat_reply(payload, db)
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, str) else "请求失败"
+            yield format_sse_event("error", {"message": detail})
+        except Exception:
+            yield format_sse_event("error", {"message": "服务暂时不可用，请稍后重试"})
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )

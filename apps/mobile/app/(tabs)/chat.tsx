@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { AppCard, AppScreen, AppText } from "../../src/components";
 import { API_BASE_URL, DEMO_USER_ID } from "../../src/config/api";
@@ -12,8 +12,102 @@ type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   content: string;
-  tone?: "default" | "error";
+  tone?: "default" | "error" | "progress";
 };
+
+type ToolStep = {
+  name: string;
+  label: string;
+  status: "started" | "done";
+};
+
+type StreamProgress = {
+  status: string;
+  tools: ToolStep[];
+};
+
+type SseEvent =
+  | { event: "status"; data: { message: string } }
+  | { event: "tool"; data: ToolStep }
+  | { event: "chunk"; data: { text: string } }
+  | { event: "done"; data: { reply: string } }
+  | { event: "error"; data: { message: string } };
+
+const STREAM_STEP_MS = 22;
+
+function renderAssistantContent(content: string, tone: ChatMessage["tone"]) {
+  const color = tone === "error" ? "text" : "textMuted";
+  const lines = content.split("\n").filter((line, index, array) => line.trim() || index < array.length - 1);
+
+  return lines.map((line, index) => {
+    const trimmed = line.trim();
+    const isBullet = /^[-*]\s+/.test(trimmed);
+    const isOrdered = /^\d+\.\s+/.test(trimmed);
+
+    if (!trimmed) {
+      return <View key={`spacer-${index}`} style={styles.lineSpacer} />;
+    }
+
+    if (isBullet) {
+      return (
+        <View key={`line-${index}`} style={styles.listRow}>
+          <AppText variant="bodySmall" color={color} style={styles.listMarker}>
+            •
+          </AppText>
+          <AppText variant="bodySmall" color={color} style={styles.listContent}>
+            {trimmed.replace(/^[-*]\s+/, "")}
+          </AppText>
+        </View>
+      );
+    }
+
+    if (isOrdered) {
+      const match = trimmed.match(/^(\d+\.)\s+(.*)$/);
+      return (
+        <View key={`line-${index}`} style={styles.listRow}>
+          <AppText variant="bodySmall" color={color} style={styles.orderedMarker}>
+            {match?.[1] ?? ""}
+          </AppText>
+          <AppText variant="bodySmall" color={color} style={styles.listContent}>
+            {match?.[2] ?? trimmed}
+          </AppText>
+        </View>
+      );
+    }
+
+    return (
+      <AppText key={`line-${index}`} variant="bodySmall" color={color} style={styles.messageLine}>
+        {trimmed}
+      </AppText>
+    );
+  });
+}
+
+function parseSseBlock(block: string): SseEvent | null {
+  const lines = block
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const eventLine = lines.find((line) => line.startsWith("event:"));
+  const dataLine = lines.find((line) => line.startsWith("data:"));
+
+  if (!eventLine || !dataLine) {
+    return null;
+  }
+
+  const event = eventLine.replace("event:", "").trim();
+  const rawData = dataLine.replace("data:", "").trim();
+
+  try {
+    return {
+      event: event as SseEvent["event"],
+      data: JSON.parse(rawData)
+    } as SseEvent;
+  } catch {
+    return null;
+  }
+}
 
 export default function ChatTab() {
   const [message, setMessage] = useState("");
@@ -26,6 +120,30 @@ export default function ChatTab() {
     }
   ]);
   const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState<StreamProgress | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  async function appendAssistantText(messageId: string, nextText: string) {
+    const units = Array.from(nextText);
+
+    for (const unit of units) {
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === messageId
+            ? {
+                ...item,
+                tone: "default",
+                content: `${item.tone === "progress" ? "" : item.content}${unit}`
+              }
+            : item
+        )
+      );
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, STREAM_STEP_MS);
+      });
+    }
+  }
 
   async function sendMessage(nextMessage?: string) {
     const content = (nextMessage ?? message).trim();
@@ -43,8 +161,23 @@ export default function ChatTab() {
     setMessage("");
     setSending(true);
 
+    const streamingAssistantId = `assistant-stream-${Date.now()}`;
+    setMessages((current) => [
+      ...current,
+      {
+        id: streamingAssistantId,
+        role: "assistant",
+        content: "正在读取财务数据...",
+        tone: "progress"
+      }
+    ]);
+    setProgress({
+      status: "准备开始分析...",
+      tools: []
+    });
+
     try {
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(`${API_BASE_URL}/chat/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -65,31 +198,97 @@ export default function ChatTab() {
         throw new Error(errorPayload?.detail ?? "Chat request failed.");
       }
 
-      const data = (await response.json()) as { reply: string };
+      if (!response.body) {
+        throw new Error("当前环境不支持流式响应。");
+      }
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: data.reply
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
         }
-      ]);
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          const parsed = parseSseBlock(part);
+          if (!parsed) {
+            continue;
+          }
+
+          if (parsed.event === "status") {
+            setProgress((current) => ({
+              status: parsed.data.message,
+              tools: current?.tools ?? []
+            }));
+
+            setMessages((current) =>
+              current.map((item) =>
+                item.id === streamingAssistantId && item.tone === "progress"
+                  ? {
+                      ...item,
+                      content: `${parsed.data.message}...`
+                    }
+                  : item
+              )
+            );
+          }
+
+          if (parsed.event === "tool") {
+            setProgress((current) => {
+              const nextTools = [...(current?.tools ?? [])];
+              const index = nextTools.findIndex((tool) => tool.name === parsed.data.name);
+
+              if (index >= 0) {
+                nextTools[index] = parsed.data;
+              } else {
+                nextTools.push(parsed.data);
+              }
+
+              return {
+                status: current?.status ?? "正在分析...",
+                tools: nextTools
+              };
+            });
+          }
+
+          if (parsed.event === "chunk") {
+            await appendAssistantText(streamingAssistantId, parsed.data.text);
+          }
+
+          if (parsed.event === "done") {
+            setProgress(null);
+          }
+
+          if (parsed.event === "error") {
+            throw new Error(parsed.data.message);
+          }
+        }
+      }
     } catch (error) {
       const fallback =
         error instanceof Error
           ? error.message
           : "请求失败，请检查服务端是否已经启动。";
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: `assistant-error-${Date.now()}`,
-          role: "assistant",
-          content: `暂时无法连接模型服务：${fallback}`,
-          tone: "error"
-        }
-      ]);
+      setProgress(null);
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === streamingAssistantId
+            ? {
+                ...item,
+                content: `暂时无法连接模型服务：${fallback}`,
+                tone: "error"
+              }
+            : item
+        )
+      );
     } finally {
       setSending(false);
     }
@@ -107,9 +306,11 @@ export default function ChatTab() {
         <View style={styles.headerDivider} />
 
         <ScrollView
+          ref={scrollRef}
           style={styles.chatArea}
           contentContainerStyle={styles.messageStack}
           showsVerticalScrollIndicator
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         >
             {messages.map((item) =>
               item.role === "assistant" ? (
@@ -118,15 +319,13 @@ export default function ChatTab() {
                   tone={item.tone === "error" ? "default" : "mint"}
                   style={[
                     styles.assistantCard,
-                    item.tone === "error" && styles.errorCard
+                    item.tone === "error" && styles.errorCard,
+                    item.tone === "progress" && styles.progressBubble
                   ]}
                 >
-                  <AppText
-                    variant="bodySmall"
-                    color={item.tone === "error" ? "text" : "textMuted"}
-                  >
-                    {item.content}
-                  </AppText>
+                  <View style={styles.messageContent}>
+                    {renderAssistantContent(item.content, item.tone)}
+                  </View>
                 </AppCard>
               ) : (
                 <View key={item.id} style={styles.userBubble}>
@@ -136,19 +335,6 @@ export default function ChatTab() {
                 </View>
               )
             )}
-
-            {sending ? (
-              <AppCard tone="mint" style={styles.assistantCard}>
-                <View style={styles.loadingRow}>
-                  <View style={styles.loadingDot} />
-                  <View style={styles.loadingDot} />
-                  <View style={styles.loadingDot} />
-                  <AppText variant="bodySmall" color="textMuted">
-                    正在思考...
-                  </AppText>
-                </View>
-              </AppCard>
-            ) : null}
         </ScrollView>
 
         <View style={styles.footerDivider} />
@@ -211,7 +397,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border
   },
   chatArea: {
-    flex: 1
+    flex: 1,
+    ...(Platform.OS === "web"
+      ? {
+          overflowY: "scroll" as const
+        }
+      : null)
   },
   footerDivider: {
     height: 1,
@@ -224,9 +415,39 @@ const styles = StyleSheet.create({
   assistantCard: {
     shadowOpacity: 0.04
   },
+  progressBubble: {
+    opacity: 0.92
+  },
   errorCard: {
     backgroundColor: "#fff4f2",
     borderColor: "#f3c7bf"
+  },
+  messageContent: {
+    gap: 4
+  },
+  messageLine: {
+    lineHeight: 21
+  },
+  lineSpacer: {
+    height: 6
+  },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingLeft: 8,
+    gap: 4
+  },
+  listMarker: {
+    width: 10,
+    lineHeight: 21
+  },
+  orderedMarker: {
+    width: 18,
+    lineHeight: 21
+  },
+  listContent: {
+    flex: 1,
+    lineHeight: 21
   },
   userBubble: {
     alignSelf: "flex-end",
@@ -292,15 +513,4 @@ const styles = StyleSheet.create({
   sendDisabled: {
     opacity: 0.5
   },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6
-  },
-  loadingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.primary
-  }
 });
