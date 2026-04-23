@@ -1,28 +1,28 @@
 {
-  "name": "server",
+  "name": "server_fast",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/server/app",
+  "sourceRoot": "apps/server_fast/app",
   "projectType": "application",
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/server",
-        "command": ".venv/bin/python run.py"
+        "cwd": "apps/server_fast",
+        "command": "uvicorn app.main:app --reload --port 8000"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/server",
-        "command": ".venv/bin/ruff check ."
+        "cwd": "apps/server_fast",
+        "command": "ruff check ."
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/server",
-        "command": ".venv/bin/mypy app"
+        "cwd": "apps/server_fast",
+        "command": "mypy app"
       }
     }
   },

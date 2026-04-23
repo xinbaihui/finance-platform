@@ -1,1 +1,1 @@
-
+"""Flask API blueprints."""

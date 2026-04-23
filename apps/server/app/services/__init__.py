@@ -1,1 +1,1 @@
-"""Service layer helpers for reusable business logic."""
+"""Business services shared by Flask routes."""

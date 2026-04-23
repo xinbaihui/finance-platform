@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import re
 import subprocess
@@ -8,13 +6,14 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Optional
 
-from flask import Blueprint, Response, jsonify, stream_with_context
+from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, OpenAI, RateLimitError
 from pydantic import BaseModel, Field
+from starlette.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
-from app.api.helpers import error_response, parse_json_body
 from app.core.config import settings
-from app.db import session_scope
+from app.db import get_db
 from app.services.analysis import (
     analyze_saving_goal,
     analyze_spending_breakdown,
@@ -25,7 +24,7 @@ from app.services.analysis import (
     simulate_financial_scenario,
 )
 
-chat_bp = Blueprint("chat", __name__)
+chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 class ChatRequest(BaseModel):
@@ -35,6 +34,12 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
     year: int = Field(default=2026, ge=2000, le=2100)
     month: int = Field(default=4, ge=1, le=12)
+
+
+class ChatResponse(BaseModel):
+    """Single-turn chat reply returned to the client."""
+
+    reply: str
 
 
 SYSTEM_PROMPT = """
@@ -75,6 +80,7 @@ def select_context_sections(message: str) -> list[str]:
     ):
         sections.append("what_if")
 
+    # Preserve order while removing duplicates.
     return list(dict.fromkeys(sections))
 
 
@@ -108,7 +114,7 @@ def parse_what_if_adjustments(message: str) -> dict[str, Optional[int]]:
     }
 
 
-def build_chat_context(payload: ChatRequest, db) -> dict[str, Any]:
+def build_chat_context(payload: ChatRequest, db: Session) -> dict[str, Any]:
     """Build structured financial context before calling the language model."""
 
     snapshot = build_analysis_snapshot(db, payload.user_id, payload.year, payload.month)
@@ -177,7 +183,10 @@ def create_openai_reply(prompt: str) -> str:
     """Generate a chat reply through the OpenAI Responses API."""
 
     if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured on the server.")
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY is not configured on the server.",
+        )
 
     client = OpenAI(api_key=settings.openai_api_key)
 
@@ -190,15 +199,19 @@ def create_openai_reply(prompt: str) -> str:
             ],
         )
     except RateLimitError as exc:
-        raise RuntimeError(
-            "OpenAI API quota is unavailable. Check API billing and quota settings."
+        raise HTTPException(
+            status_code=429,
+            detail="OpenAI API quota is unavailable. Check API billing and quota settings.",
         ) from exc
     except APIError as exc:
-        raise RuntimeError("OpenAI API request failed.") from exc
+        raise HTTPException(
+            status_code=502,
+            detail="OpenAI API request failed.",
+        ) from exc
 
     reply = response.output_text.strip()
     if not reply:
-        raise RuntimeError("Model returned an empty reply.")
+        raise HTTPException(status_code=502, detail="Model returned an empty reply.")
 
     return reply
 
@@ -231,9 +244,15 @@ def create_codex_reply(prompt: str) -> str:
             timeout=90,
         )
     except FileNotFoundError as exc:
-        raise RuntimeError("Codex CLI is not available on the server.") from exc
+        raise HTTPException(
+            status_code=503,
+            detail="Codex CLI is not available on the server.",
+        ) from exc
     except subprocess.TimeoutExpired as exc:
-        raise RuntimeError("Codex CLI timed out while generating a reply.") from exc
+        raise HTTPException(
+            status_code=504,
+            detail="Codex CLI timed out while generating a reply.",
+        ) from exc
 
     try:
         reply = output_path.read_text(encoding="utf-8").strip()
@@ -242,26 +261,15 @@ def create_codex_reply(prompt: str) -> str:
 
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip() or "Codex CLI request failed."
-        raise RuntimeError(detail)
+        raise HTTPException(status_code=502, detail=detail)
 
     if not reply:
-        raise RuntimeError("Codex CLI returned an empty reply.")
+        raise HTTPException(status_code=502, detail="Codex CLI returned an empty reply.")
 
     return reply
 
 
-def create_reply_with_provider(prompt: str) -> str:
-    """Route prompt generation to the configured chat provider."""
-
-    provider = settings.chat_provider.lower()
-    if provider == "codex":
-        return create_codex_reply(prompt)
-    if provider == "openai":
-        return create_openai_reply(prompt)
-    raise RuntimeError(f"Unsupported chat provider: {settings.chat_provider}")
-
-
-def stream_chat_reply(payload: ChatRequest, db) -> Iterator[str]:
+def stream_chat_reply(payload: ChatRequest, db: Session) -> Iterator[str]:
     """Yield status, tool, chunk, and done events for the chat SSE endpoint."""
 
     yield format_sse_event("status", {"message": "正在读取财务数据"})
@@ -305,13 +313,29 @@ def stream_chat_reply(payload: ChatRequest, db) -> Iterator[str]:
             continue
 
         label, builder = tool_builders[section]
-        yield format_sse_event("tool", {"name": section, "status": "started", "label": f"{label}开始"})
+        yield format_sse_event(
+            "tool",
+            {"name": section, "status": "started", "label": f"{label}开始"},
+        )
         context[section] = builder(snapshot)
-        yield format_sse_event("tool", {"name": section, "status": "done", "label": f"{label}完成"})
+        yield format_sse_event(
+            "tool",
+            {"name": section, "status": "done", "label": f"{label}完成"},
+        )
 
     yield format_sse_event("status", {"message": "正在生成回复"})
     prompt = build_model_prompt(payload.message, context)
-    reply = create_reply_with_provider(prompt)
+
+    provider = settings.chat_provider.lower()
+    if provider == "codex":
+        reply = create_codex_reply(prompt)
+    elif provider == "openai":
+        reply = create_openai_reply(prompt)
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unsupported chat provider: {settings.chat_provider}",
+        )
 
     for chunk in split_reply_chunks(reply):
         yield format_sse_event("chunk", {"text": chunk})
@@ -319,47 +343,49 @@ def stream_chat_reply(payload: ChatRequest, db) -> Iterator[str]:
     yield format_sse_event("done", {"reply": reply})
 
 
-@chat_bp.post("")
-def create_chat_reply():
+@chat_router.post("", response_model=ChatResponse)
+def create_chat_reply(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+) -> ChatResponse:
     """Answer the user's question after enriching it with computed financial context."""
 
-    payload, payload_error = parse_json_body(ChatRequest)
-    if payload_error:
-        return payload_error
+    provider = settings.chat_provider.lower()
+    context = build_chat_context(payload, db)
+    prompt = build_model_prompt(payload.message, context)
 
-    try:
-        with session_scope() as db:
-            context = build_chat_context(payload, db)
-            prompt = build_model_prompt(payload.message, context)
-            reply = create_reply_with_provider(prompt)
-        return jsonify({"reply": reply}), 200
-    except RuntimeError as exc:
-        message = str(exc)
-        status_code = 429 if "quota" in message.lower() else 503 if "not available" in message.lower() else 502
-        return error_response(message, status_code)
+    if provider == "codex":
+        reply = create_codex_reply(prompt)
+    elif provider == "openai":
+        reply = create_openai_reply(prompt)
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unsupported chat provider: {settings.chat_provider}",
+        )
+
+    return ChatResponse(reply=reply)
 
 
-@chat_bp.post("/stream")
-def create_streaming_chat_reply():
+@chat_router.post("/stream")
+def create_streaming_chat_reply(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
     """Stream chat execution progress and the final answer through SSE."""
 
-    payload, payload_error = parse_json_body(ChatRequest)
-    if payload_error:
-        return payload_error
-
-    @stream_with_context
     def event_generator() -> Iterator[str]:
         try:
-            with session_scope() as db:
-                yield from stream_chat_reply(payload, db)
-        except RuntimeError as exc:
-            yield format_sse_event("error", {"message": str(exc)})
+            yield from stream_chat_reply(payload, db)
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, str) else "请求失败"
+            yield format_sse_event("error", {"message": detail})
         except Exception:
             yield format_sse_event("error", {"message": "服务暂时不可用，请稍后重试"})
 
-    return Response(
+    return StreamingResponse(
         event_generator(),
-        mimetype="text/event-stream",
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
