@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from sqlalchemy import inspect, text
 
+from app.api.admin import admin_bp
 from app.api.chat import chat_bp
 from app.api.chat_context import chat_context_bp
 from app.api.finance import finance_bp
@@ -71,6 +72,7 @@ def create_app() -> Flask:
         return {"detail": "Internal Server Error"}, 500
 
     app.register_blueprint(finance_bp, url_prefix=f"{settings.api_prefix}/users/<string:user_id>")
+    app.register_blueprint(admin_bp, url_prefix=f"{settings.api_prefix}/admin")
     app.register_blueprint(
         chat_context_bp,
         url_prefix=f"{settings.api_prefix}/users/<string:user_id>/chat-context",
