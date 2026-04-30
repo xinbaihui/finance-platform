@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
@@ -7,6 +8,9 @@ import { API_BASE_URL, DEMO_USER_ID } from "../../src/config/api";
 import { theme } from "../../src/theme";
 
 const quickTags = ["本月分析", "全年预测", "目标差距"] as const;
+const welcomePrefix =
+  "你好，我会基于你的年度规划、资产信息和分析结果，帮助你理解本月支出、全年走势和目标差距。你也可以先到“";
+const welcomeSuffix = "”页面补充收入、资产等信息，分析结果会更准确。";
 
 type ChatMessage = {
   id: string;
@@ -110,13 +114,13 @@ function parseSseBlock(block: string): SseEvent | null {
 }
 
 export default function ChatTab() {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "assistant",
-      content:
-        "你好，我会基于你的年度规划、资产信息和分析结果，帮助你理解本月支出、全年走势和目标差距。"
+      content: `${welcomePrefix}我的${welcomeSuffix}`
     }
   ]);
   const [sending, setSending] = useState(false);
@@ -324,7 +328,22 @@ export default function ChatTab() {
                   ]}
                 >
                   <View style={styles.messageContent}>
-                    {renderAssistantContent(item.content, item.tone)}
+                    {item.id === "welcome" ? (
+                      <AppText variant="bodySmall" color="textMuted" style={styles.messageLine}>
+                        {welcomePrefix}
+                        <AppText
+                          variant="bodySmall"
+                          color="primaryDark"
+                          style={styles.inlineLink}
+                          onPress={() => router.push("/(tabs)/me")}
+                        >
+                          我的
+                        </AppText>
+                        {welcomeSuffix}
+                      </AppText>
+                    ) : (
+                      renderAssistantContent(item.content, item.tone)
+                    )}
                   </View>
                 </AppCard>
               ) : (
@@ -427,6 +446,9 @@ const styles = StyleSheet.create({
   },
   messageLine: {
     lineHeight: 21
+  },
+  inlineLink: {
+    textDecorationLine: "underline"
   },
   lineSpacer: {
     height: 6

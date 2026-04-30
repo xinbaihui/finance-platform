@@ -246,7 +246,7 @@ def create_codex_reply(prompt: str) -> str:
     except FileNotFoundError as exc:
         raise HTTPException(
             status_code=503,
-            detail="Codex CLI is not available on the server.",
+            detail=f"Codex CLI is not available on the server. Checked path: {settings.codex_cli_path}",
         ) from exc
     except subprocess.TimeoutExpired as exc:
         raise HTTPException(

@@ -231,7 +231,9 @@ def create_codex_reply(prompt: str) -> str:
             timeout=90,
         )
     except FileNotFoundError as exc:
-        raise RuntimeError("Codex CLI is not available on the server.") from exc
+        raise RuntimeError(
+            f"Codex CLI is not available on the server. Checked path: {settings.codex_cli_path}"
+        ) from exc
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("Codex CLI timed out while generating a reply.") from exc
 
